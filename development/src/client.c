@@ -105,6 +105,11 @@ int cl_snrmRequest(dlmsSettings* settings, message* messages)
     return ret;
 }
 
+int cl_receiverReady(dlmsSettings* settings, DLMS_DATA_REQUEST_TYPES type, gxByteBuffer* reply)
+{
+    return dlms_receiverReady(settings, type, reply);
+}
+
 
 uint16_t cl_getServerAddress(uint16_t logicalAddress, uint16_t physicalAddress, unsigned char addressSize)
 {

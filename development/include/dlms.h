@@ -18,4 +18,10 @@ int frame,
 gxByteBuffer* data,
 gxByteBuffer* reply);
 
+
+int dlms_receiverReady(
+dlmsSettings* settings,
+DLMS_DATA_REQUEST_TYPES type,
+gxByteBuffer* reply);
+
 #endif

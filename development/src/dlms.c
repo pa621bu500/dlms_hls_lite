@@ -223,3 +223,119 @@ int dlms_getAddress(int32_t value, uint32_t* address, int* size)
     }
     return DLMS_ERROR_CODE_OK;
 }
+
+int dlms_receiverReady(
+    dlmsSettings* settings,
+    DLMS_DATA_REQUEST_TYPES type,
+    gxByteBuffer* reply)
+{
+    int ret;
+    DLMS_COMMAND cmd;
+    message tmp;
+    gxByteBuffer bb;
+    bb_clear(reply);
+    if (type == DLMS_DATA_REQUEST_TYPES_NONE)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+#ifndef DLMS_IGNORE_HDLC
+    // Get next frame.
+    if ((type & DLMS_DATA_REQUEST_TYPES_FRAME) != 0)
+    {
+        unsigned char id = getReceiverReady(settings);
+        switch (settings->interfaceType)
+        {
+#ifndef DLMS_IGNORE_PLC
+        case DLMS_INTERFACE_TYPE_PLC_HDLC:
+            ret = dlms_getMacHdlcFrame(settings, id, 0, NULL, reply);
+            break;
+#endif //DLMS_IGNORE_PLC
+#ifndef DLMS_IGNORE_HDLC
+        case DLMS_INTERFACE_TYPE_HDLC:
+            ret = dlms_getHdlcFrame(settings, id, NULL, reply);
+            break;
+#endif //DLMS_IGNORE_HDLC
+        default:
+            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+        return ret;
+    }
+#endif //DLMS_IGNORE_HDLC
+    // Get next block.
+    if (settings->useLogicalNameReferencing)
+    {
+        if (settings->server)
+        {
+            cmd = DLMS_COMMAND_GET_RESPONSE;
+        }
+        else
+        {
+            cmd = DLMS_COMMAND_GET_REQUEST;
+        }
+    }
+    else
+    {
+#if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
+        if (settings->server)
+        {
+            cmd = DLMS_COMMAND_READ_RESPONSE;
+        }
+        else
+        {
+            cmd = DLMS_COMMAND_READ_REQUEST;
+        }
+#else
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+#endif //#if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
+    }
+#ifdef DLMS_IGNORE_MALLOC
+    unsigned char buff[40];
+    bb_attach(&bb, buff, 0, sizeof(buff));
+#else
+    BYTE_BUFFER_INIT(&bb);
+#endif //DLMS_IGNORE_MALLOC
+
+    if (settings->useLogicalNameReferencing)
+    {
+        bb_setUInt32(&bb, settings->blockIndex);
+    }
+    else
+    {
+        bb_setUInt16(&bb, (uint16_t)settings->blockIndex);
+    }
+    ++settings->blockIndex;
+#ifdef DLMS_IGNORE_MALLOC
+    gxByteBuffer* p[] = { reply };
+    mes_attach(&tmp, p, 1);
+#else
+    mes_init(&tmp);
+#endif //DLMS_IGNORE_MALLOC
+    if (settings->useLogicalNameReferencing)
+    {
+        gxLNParameters p;
+        params_initLN(&p, settings, 0, cmd, DLMS_GET_COMMAND_TYPE_NEXT_DATA_BLOCK, &bb, NULL, 0xFF, DLMS_COMMAND_NONE, 0, 0);
+#ifdef DLMS_IGNORE_MALLOC
+        p.serializedPdu = &bb;
+#endif //DLMS_IGNORE_MALLOC
+        ret = dlms_getLnMessages(&p, &tmp);
+    }
+    else
+    {
+#if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
+        gxSNParameters p;
+        params_initSN(&p, settings, cmd, 1, DLMS_VARIABLE_ACCESS_SPECIFICATION_BLOCK_NUMBER_ACCESS, &bb, NULL, DLMS_COMMAND_NONE);
+        ret = dlms_getSnMessages(&p, &tmp);
+#else
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+#endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
+    }
+#ifndef DLMS_IGNORE_MALLOC
+    if (ret == 0)
+    {
+        ret = bb_set2(reply, (gxByteBuffer*)tmp.data[0], 0, tmp.data[0]->size);
+    }
+    bb_clear(&bb);
+    mes_clear(&tmp);
+#endif //DLMS_IGNORE_MALLOC
+    return ret;
+}

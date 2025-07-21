@@ -10,4 +10,9 @@ int cl_snrmRequest(
 dlmsSettings* settings,
 message* messages);
 
+int cl_receiverReady(
+dlmsSettings* settings,
+DLMS_DATA_REQUEST_TYPES type,
+gxByteBuffer* message);
+
 #endif

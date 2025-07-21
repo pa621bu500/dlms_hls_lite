@@ -141,6 +141,46 @@ int com_readSerialPort(
     return DLMS_ERROR_CODE_OK;
 }
 
+int readData(connection* connection, gxByteBuffer* data, int* index)
+{
+    int ret = 0;
+    if (connection->comPort != INVALID_HANDLE_VALUE)
+    {
+        if ((ret = com_readSerialPort(connection, 0x7E)) != 0)
+        {
+            return ret;
+        }
+    }
+    // else
+    // {
+    //     uint32_t cnt = connection->data.capacity - connection->data.size;
+    //     if (cnt < 1)
+    //     {
+    //         return DLMS_ERROR_CODE_OUTOFMEMORY;
+    //     }
+    //     if ((ret = recv(connection->socket, (char*)connection->data.data + connection->data.size, cnt, 0)) == -1)
+    //     {
+    //         return DLMS_ERROR_CODE_RECEIVE_FAILED;
+    //     }
+    //     connection->data.size += ret;
+    // }
+    // if (connection->trace > GX_TRACE_LEVEL_INFO)
+    // {
+    //     char* hex = hlp_bytesToHex(connection->data.data + *index, connection->data.size - *index);
+    //     if (*index == 0)
+    //     {
+    //         printf("\nRX:\t %s", hex);
+    //     }
+    //     else
+    //     {
+    //         printf(" %s", hex);
+    //     }
+    //     free(hex);
+    //     *index = connection->data.size;
+    // }
+    return 0;
+}
+
 int readDLMSPacket(
     connection* connection,
     gxByteBuffer* data,
@@ -167,19 +207,19 @@ int readDLMSPacket(
     reply_init(&notify);
     do
     {
-        // if ((ret = readData(connection, &connection->data, &index)) != 0)
-        // {
-        //     if (ret != DLMS_ERROR_CODE_RECEIVE_FAILED || pos == 3)
-        //     {
-        //         break;
-        //     }
-        //     ++pos;
-        //     printf("\nData send failed. Try to resend %d/3\n", pos);
-        //     if ((ret = sendData(connection, data)) != 0)
-        //     {
-        //         break;
-        //     }
-        // }
+         if ((ret = readData(connection, &connection->data, &index)) != 0)
+        {
+            if (ret != DLMS_ERROR_CODE_RECEIVE_FAILED || pos == 3)
+            {
+                break;
+            }
+            ++pos;
+            printf("\nData send failed. Try to resend %d/3\n", pos);
+            if ((ret = sendData(connection, data)) != 0)
+            {
+                break;
+            }
+        }
         // else
         // {
         //     ret = cl_getData2(&connection->settings, &connection->data, reply, &notify, &isNotify);
@@ -265,11 +305,11 @@ int com_readDataBlock(
         //Check is there errors or more data from server
         while (reply_isMoreData(reply))
         {
-            // if ((ret = cl_receiverReady(&connection->settings, reply->moreData, &rr)) != DLMS_ERROR_CODE_OK)
-            // {
-            //     bb_clear(&rr);
-            //     return ret;
-            // }
+            if ((ret = cl_receiverReady(&connection->settings, reply->moreData, &rr)) != DLMS_ERROR_CODE_OK)
+            {
+                bb_clear(&rr);
+                return ret;
+            }
             if ((ret = readDLMSPacket(connection, &rr, reply)) != DLMS_ERROR_CODE_OK)
             {
                 bb_clear(&rr);
