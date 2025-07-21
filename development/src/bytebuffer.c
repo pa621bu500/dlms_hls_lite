@@ -76,18 +76,18 @@ int bb_clear(
         return 0;
 }
 
-// int bb_getUInt8(
-//     gxByteBuffer* arr,
-//     unsigned char* value)
-// {
-//     if (arr->position >= arr->size)
-//     {
-//         return DLMS_ERROR_CODE_OUTOFMEMORY;
-//     }
-//     *value = ((unsigned char*)arr->data)[arr->position];
-//     ++arr->position;
-//     return 0;
-// }
+int bb_getUInt8(
+    gxByteBuffer* arr,
+    unsigned char* value)
+{
+    if (arr->position >= arr->size)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    *value = ((unsigned char*)arr->data)[arr->position];
+    ++arr->position;
+    return 0;
+}
 
 
 int bb_setUInt8ByIndex(

@@ -1,5 +1,6 @@
 
-
+#ifndef PARAMETERS_H
+#define PARAMETERS_H
 #include "dlmssettings.h"
 
   typedef struct
@@ -59,3 +60,18 @@
         //Serialize data to this PDU.
         gxByteBuffer* serializedPdu;
     } gxLNParameters;
+
+void params_initLN(
+gxLNParameters *target,
+dlmsSettings* settings,
+unsigned char invokeId,
+DLMS_COMMAND command,
+unsigned char commandType,
+gxByteBuffer* attributeDescriptor,
+gxByteBuffer* data,
+unsigned char status,
+DLMS_COMMAND encryptedCommand,
+unsigned char multipleBlocks,
+unsigned char lastBlock);
+
+#endif // PARAMETERS_H

@@ -8,3 +8,5 @@ unsigned char** arr,
 uint16_t* count);
 
 unsigned char hlp_getValue(char c);
+
+unsigned char hlp_rand(void);

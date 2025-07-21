@@ -12,6 +12,7 @@
     {
         DLMS_INTERFACE_TYPE_HDLC = 0,
         DLMS_INTERFACE_TYPE_PLC,
+        DLMS_INTERFACE_TYPE_PDU,
         DLMS_INTERFACE_TYPE_PLC_HDLC,
         DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E,
         DLMS_INTERFACE_TYPE_WRAPPER = 0x1,
@@ -170,9 +171,11 @@ typedef enum
         DLMS_COMMAND_AARE = 0x61,
         DLMS_COMMAND_RELEASE_REQUEST = 0x62,
         DLMS_COMMAND_SNRM = 0x93,
-         DLMS_COMMAND_ACCESS_REQUEST = 0xD9,
-         DLMS_COMMAND_GLO_GET_REQUEST = 0xC8,
-         DLMS_COMMAND_GLO_SET_REQUEST = 0xC9,
+        DLMS_COMMAND_ACCESS_REQUEST = 0xD9,
+        DLMS_COMMAND_GLO_GET_REQUEST = 0xC8,
+        DLMS_COMMAND_GLO_SET_REQUEST = 0xC9,
+        DLMS_COMMAND_DATA_NOTIFICATION = 0x0F,
+        DLMS_COMMAND_EVENT_NOTIFICATION = 0xC2,
     } DLMS_COMMAND;
 
 
@@ -183,6 +186,7 @@ typedef enum
         //Connection is not made for the meter.
         DLMS_CONNECTION_STATE_NONE = 0,
         //Connection is made for DLMS level.
+        DLMS_CONNECTION_STATE_HDLC = 1,
         DLMS_CONNECTION_STATE_DLMS = 2,
 
     }DLMS_CONNECTION_STATE;
@@ -196,14 +200,6 @@ typedef enum
         BER_TYPE_OCTET_STRING = 0x4,
         BER_TYPE_INTEGER,
     };
-
-       // Connection types.
-    typedef enum {
-
-        //Connection is made for HDLC level.
-        DLMS_CONNECTION_STATE_HDLC = 1,
-
-    }DLMS_CONNECTION_STATE;
 
         typedef enum
     {

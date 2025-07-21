@@ -173,12 +173,12 @@ int dlms_parseSnrmUaResponse(
             value = ch;
             break;
         case 2:
-            ret = bb_getUInt16(data, &tmp);
-            value = tmp;
-            break;
+            // ret = bb_getUInt16(data, &tmp);
+            // value = tmp;
+            // break;
         case 4:
-            ret = bb_getUInt32(data, &value);
-            break;
+            // ret = bb_getUInt32(data, &value);
+            // break;
         default:
             ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         }

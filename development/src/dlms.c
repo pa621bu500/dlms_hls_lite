@@ -10,6 +10,7 @@
 #include "../include/crc.h"
 #include "../include/cosem.h"
 #include "../include/gxobjects.h"
+#include "../include/parameters.h"
 
 
 static const unsigned char LLC_SEND_BYTES[3] = { 0xE6, 0xE6, 0x00 };
@@ -224,121 +225,149 @@ int dlms_getAddress(int32_t value, uint32_t* address, int* size)
     return DLMS_ERROR_CODE_OK;
 }
 
-// int dlms_receiverReady(
-//     dlmsSettings* settings,
-//     DLMS_DATA_REQUEST_TYPES type,
-//     gxByteBuffer* reply)
-// {
-//     int ret;
-//     DLMS_COMMAND cmd;
-//     message tmp;
-//     gxByteBuffer bb;
-//     bb_clear(reply);
-//     if (type == DLMS_DATA_REQUEST_TYPES_NONE)
-//     {
-//         return DLMS_ERROR_CODE_INVALID_PARAMETER;
-//     }
-// #ifndef DLMS_IGNORE_HDLC
-//     // Get next frame.
-//     if ((type & DLMS_DATA_REQUEST_TYPES_FRAME) != 0)
-//     {
-//         unsigned char id = getReceiverReady(settings);
-//         switch (settings->interfaceType)
-//         {
-// #ifndef DLMS_IGNORE_PLC
-//         case DLMS_INTERFACE_TYPE_PLC_HDLC:
-//             ret = dlms_getMacHdlcFrame(settings, id, 0, NULL, reply);
-//             break;
-// #endif //DLMS_IGNORE_PLC
-// #ifndef DLMS_IGNORE_HDLC
-//         case DLMS_INTERFACE_TYPE_HDLC:
-//             ret = dlms_getHdlcFrame(settings, id, NULL, reply);
-//             break;
-// #endif //DLMS_IGNORE_HDLC
-//         default:
-//             ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-//         }
-//         return ret;
-//     }
-// #endif //DLMS_IGNORE_HDLC
-//     // Get next block.
-//     if (settings->useLogicalNameReferencing)
-//     {
-//         if (settings->server)
-//         {
-//             cmd = DLMS_COMMAND_GET_RESPONSE;
-//         }
-//         else
-//         {
-//             cmd = DLMS_COMMAND_GET_REQUEST;
-//         }
-//     }
-//     else
-//     {
-// #if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
-//         if (settings->server)
-//         {
-//             cmd = DLMS_COMMAND_READ_RESPONSE;
-//         }
-//         else
-//         {
-//             cmd = DLMS_COMMAND_READ_REQUEST;
-//         }
-// #else
-//         return DLMS_ERROR_CODE_INVALID_PARAMETER;
-// #endif //#if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
-//     }
-// #ifdef DLMS_IGNORE_MALLOC
-//     unsigned char buff[40];
-//     bb_attach(&bb, buff, 0, sizeof(buff));
-// #else
-//     BYTE_BUFFER_INIT(&bb);
-// #endif //DLMS_IGNORE_MALLOC
+int dlms_generateChallenge(
+    gxByteBuffer* challenge)
+{
+    // Random challenge is 8 to 64 bytes.
+    // Texas Instruments accepts only 16 byte long challenge.
+    // For this reason challenge size is 16 bytes at the moment.
+    int ret = 0, pos, len = 16;
+    bb_clear(challenge);
+    for (pos = 0; pos != len; ++pos)
+    {
+        if ((ret = bb_setUInt8(challenge, hlp_rand())) != 0)
+        {
+            break;
+        }
+    }
+    return ret;
+}
 
-//     if (settings->useLogicalNameReferencing)
-//     {
-//         bb_setUInt32(&bb, settings->blockIndex);
-//     }
-//     else
-//     {
-//         bb_setUInt16(&bb, (uint16_t)settings->blockIndex);
-//     }
-//     ++settings->blockIndex;
-// #ifdef DLMS_IGNORE_MALLOC
-//     gxByteBuffer* p[] = { reply };
-//     mes_attach(&tmp, p, 1);
-// #else
-//     mes_init(&tmp);
-// #endif //DLMS_IGNORE_MALLOC
-//     if (settings->useLogicalNameReferencing)
-//     {
-//         gxLNParameters p;
-//         params_initLN(&p, settings, 0, cmd, DLMS_GET_COMMAND_TYPE_NEXT_DATA_BLOCK, &bb, NULL, 0xFF, DLMS_COMMAND_NONE, 0, 0);
-// #ifdef DLMS_IGNORE_MALLOC
-//         p.serializedPdu = &bb;
-// #endif //DLMS_IGNORE_MALLOC
-//         ret = dlms_getLnMessages(&p, &tmp);
-//     }
-//     else
-//     {
-// #if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
-//         gxSNParameters p;
-//         params_initSN(&p, settings, cmd, 1, DLMS_VARIABLE_ACCESS_SPECIFICATION_BLOCK_NUMBER_ACCESS, &bb, NULL, DLMS_COMMAND_NONE);
-//         ret = dlms_getSnMessages(&p, &tmp);
-// #else
-//         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-// #endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
-//     }
-// #ifndef DLMS_IGNORE_MALLOC
-//     if (ret == 0)
-//     {
-//         ret = bb_set2(reply, (gxByteBuffer*)tmp.data[0], 0, tmp.data[0]->size);
-//     }
-//     bb_clear(&bb);
-//     mes_clear(&tmp);
-// #endif //DLMS_IGNORE_MALLOC
-//     return ret;
-// }
+int dlms_getLnMessages(
+    gxLNParameters* p,
+    message* messages)
+{
+    int ret;
+    gxByteBuffer* pdu;
+    gxByteBuffer* it;
+#ifndef DLMS_IGNORE_HDLC
+    unsigned char frame = 0;
+    if (p->command == DLMS_COMMAND_DATA_NOTIFICATION ||
+        p->command == DLMS_COMMAND_EVENT_NOTIFICATION)
+    {
+        frame = 0x13;
+    }
+#endif //DLMS_IGNORE_HDLC
+#ifdef DLMS_IGNORE_MALLOC
+    pdu = p->serializedPdu;
+#else
+    gxByteBuffer reply;
+    if (p->serializedPdu == NULL)
+    {
+        BYTE_BUFFER_INIT(&reply);
+        pdu = &reply;
+    }
+    else
+    {
+        pdu = p->serializedPdu;
+    }
+#endif //DLMS_IGNORE_MALLOC
+    do
+    {
+        if ((ret = dlms_getLNPdu(p, pdu)) == 0)
+        {
+            p->lastBlock = 1;
+            if (p->attributeDescriptor == NULL)
+            {
+                ++p->settings->blockIndex;
+            }
+        }
+        while (ret == 0 && pdu->position != pdu->size)
+        {
+#ifdef DLMS_IGNORE_MALLOC
+            if (!(messages->size < messages->capacity))
+            {
+                ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+                break;
+            }
+            it = messages->data[messages->size];
+            ++messages->size;
+            bb_clear(it);
+#else
+            if (messages->attached)
+            {
+                if (messages->size < messages->capacity)
+                {
+                    it = messages->data[messages->size];
+                    ++messages->size;
+                    bb_clear(it);
+                }
+                else
+                {
+                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
+            }
+            else
+            {
+                it = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
+                if (it == NULL)
+                {
+                    ret = DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
+                else
+                {
+                    BYTE_BUFFER_INIT(it);
+                    ret = mes_push(messages, it);
+                }
+            }
+            if (ret != 0)
+            {
+                break;
+            }
+#endif //DLMS_IGNORE_MALLOC
+            switch (p->settings->interfaceType)
+            {
+#ifndef DLMS_IGNORE_WRAPPER
+            case DLMS_INTERFACE_TYPE_WRAPPER:
+                ret = dlms_getWrapperFrame(p->settings, p->command, pdu, it);
+                break;
+#endif //DLMS_IGNORE_WRAPPER
+#ifndef DLMS_IGNORE_HDLC
+            case DLMS_INTERFACE_TYPE_HDLC:
+            // case DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E:
+            //     ret = dlms_getHdlcFrame(p->settings, frame, pdu, it);
+            //     if (ret == 0 && pdu->position != pdu->size)
+            //     {
+            //         frame = getNextSend(p->settings, 0);
+            //     }
+            //     break;
+#endif //DLMS_IGNORE_HDLC
+            case DLMS_INTERFACE_TYPE_PDU:
+                ret = bb_set2(it, pdu, 0, pdu->size);
+                break;
+#ifndef DLMS_IGNORE_PLC
+            // case DLMS_INTERFACE_TYPE_PLC:
+            //     ret = dlms_getPlcFrame(p->settings, 0x90, pdu, it);
+            //     break;
+            // case DLMS_INTERFACE_TYPE_PLC_HDLC:
+            //     ret = dlms_getMacHdlcFrame(p->settings, frame, 0, pdu, it);
+            //     break;
+#endif //DLMS_IGNORE_PLC
+            default:
+                ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+            }
+            if (ret != 0)
+            {
+                break;
+            }
+        }
+        bb_clear(pdu);
+#ifndef DLMS_IGNORE_HDLC
+        frame = 0;
+#endif //DLMS_IGNORE_HDLC
+    } while (ret == 0 && p->data != NULL && p->data->position != p->data->size);
+    return ret;
+}
 
 int dlms_checkInit(dlmsSettings* settings)
 {
