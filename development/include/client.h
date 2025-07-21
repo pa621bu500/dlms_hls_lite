@@ -10,9 +10,12 @@ int cl_snrmRequest(
 dlmsSettings* settings,
 message* messages);
 
-int cl_receiverReady(
+int dlms_parseSnrmUaResponse(
 dlmsSettings* settings,
-DLMS_DATA_REQUEST_TYPES type,
-gxByteBuffer* message);
-
+gxByteBuffer* data);
 #endif
+
+
+int cl_parseUAResponse(
+dlmsSettings* settings,
+gxByteBuffer* data);

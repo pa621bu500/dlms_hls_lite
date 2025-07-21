@@ -9,6 +9,7 @@
 #include "../include/message.h"
 #include "../include/errorcodes.h"
 #include "../include/bytebuffer.h"
+#include "../include/parameters.h"
 
 int cl_snrmRequest(dlmsSettings* settings, message* messages)
 {
@@ -105,10 +106,10 @@ int cl_snrmRequest(dlmsSettings* settings, message* messages)
     return ret;
 }
 
-int cl_receiverReady(dlmsSettings* settings, DLMS_DATA_REQUEST_TYPES type, gxByteBuffer* reply)
-{
-    return dlms_receiverReady(settings, type, reply);
-}
+// int cl_receiverReady(dlmsSettings* settings, DLMS_DATA_REQUEST_TYPES type, gxByteBuffer* reply)
+// {
+//     return dlms_receiverReady(settings, type, reply);
+// }
 
 
 uint16_t cl_getServerAddress(uint16_t logicalAddress, uint16_t physicalAddress, unsigned char addressSize)
@@ -127,4 +128,216 @@ uint16_t cl_getServerAddress(uint16_t logicalAddress, uint16_t physicalAddress, 
         value = 0;
     }
     return value;
+}
+
+
+int dlms_parseSnrmUaResponse(
+    dlmsSettings* settings,
+    gxByteBuffer* data)
+{
+    uint32_t value;
+    unsigned char ch, id, len;
+    uint16_t tmp;
+    int ret;
+    //If default settings are used.
+    // if (data->size - data->position == 0)
+    // {
+    //     return 0;
+    // }
+    // Skip FromatID
+    // if ((ret = bb_getUInt8(data, &ch)) != 0)
+    // {
+    //     return ret;
+    // }
+    // Skip Group ID.
+    // if ((ret = bb_getUInt8(data, &ch)) != 0)
+    // {
+    //     return ret;
+    // }
+    // // Skip Group len
+    // if ((ret = bb_getUInt8(data, &ch)) != 0)
+    // {
+    //     return ret;
+    // }
+    while (data->position < data->size)
+    {
+        if ((ret = bb_getUInt8(data, &id)) != 0 ||
+            (ret = bb_getUInt8(data, &len)) != 0)
+        {
+            return ret;
+        }
+        switch (len)
+        {
+        case 1:
+            ret = bb_getUInt8(data, &ch);
+            value = ch;
+            break;
+        case 2:
+            ret = bb_getUInt16(data, &tmp);
+            value = tmp;
+            break;
+        case 4:
+            ret = bb_getUInt32(data, &value);
+            break;
+        default:
+            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+        if (ret != DLMS_ERROR_CODE_OK)
+        {
+            return ret;
+        }
+        // RX / TX are delivered from the partner's point of view =>
+        // reversed to ours
+        switch (id)
+        {
+        case HDLC_INFO_MAX_INFO_TX:
+            if (value < settings->maxInfoRX)
+            {
+                settings->maxInfoRX = (uint16_t)value;
+            }
+            break;
+        case HDLC_INFO_MAX_INFO_RX:
+            if (value < settings->maxInfoTX)
+            {
+                settings->maxInfoTX = (uint16_t)value;
+            }
+            break;
+        case HDLC_INFO_WINDOW_SIZE_TX:
+            if (value < settings->windowSizeRX)
+            {
+                settings->windowSizeRX = (unsigned char)value;
+            }
+            break;
+        case HDLC_INFO_WINDOW_SIZE_RX:
+            if (value < settings->windowSizeTX)
+            {
+                settings->windowSizeTX = (unsigned char)value;
+            }
+            break;
+        default:
+            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+            break;
+        }
+    }
+    return ret;
+}
+
+
+int cl_parseUAResponse(dlmsSettings* settings, gxByteBuffer* data)
+{
+    int ret = dlms_parseSnrmUaResponse(settings, data);
+    if (ret == 0 && bb_size(data) != 0)
+    {
+        settings->connected = DLMS_CONNECTION_STATE_HDLC;
+    }
+    return ret;
+}
+
+int cl_aarqRequest(
+    dlmsSettings* settings,
+    message* messages)
+{
+    if (settings->proposedConformance == 0)
+    {
+        //Invalid conformance.
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    // if (dlms_usePreEstablishedConnection(settings))
+    // {
+    //     //Invalid conformance.
+    //     return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    // }
+
+    //Save default values.
+    settings->initializePduSize = settings->maxPduSize;
+    int ret;
+    gxByteBuffer* pdu;
+#ifdef DLMS_IGNORE_MALLOC
+   //EVS2 NOT SUPPORTED
+#else
+    gxByteBuffer buff;
+#ifdef GX_DLMS_MICROCONTROLLER
+    //EVS2 NOT SUPPORTED
+#else
+    BYTE_BUFFER_INIT(&buff);
+    if ((ret = bb_capacity(&buff, 100)) != 0)
+    {
+        return ret;
+    }
+    pdu = &buff;
+#endif
+#endif //DLMS_IGNORE_MALLOC
+
+    settings->connected &= ~DLMS_CONNECTION_STATE_DLMS;
+    resetBlockIndex(settings);
+    mes_clear(messages);
+    ret = dlms_checkInit(settings);
+    if (ret != DLMS_ERROR_CODE_OK)
+    {
+        return ret;
+    }
+    bb_clear(&settings->stoCChallenge);
+    if (settings->autoIncreaseInvokeID)
+    {
+        settings->invokeID = 0;
+    }
+    else
+    {
+        settings->invokeID = 1;
+    }
+    // If authentication or ciphering is used.
+    if (settings->authentication > DLMS_AUTHENTICATION_LOW && settings->customChallenges == 0)
+    {
+        if ((ret = dlms_generateChallenge(&settings->ctoSChallenge)) != 0)
+        {
+            return ret;
+        }
+    }
+    if ((ret = apdu_generateAarq(settings, pdu)) == 0)
+    {
+        if (settings->useLogicalNameReferencing)
+        {
+            gxLNParameters p;
+            params_initLN(&p, settings, 0, DLMS_COMMAND_AARQ, 0, pdu, NULL, 0xFF, DLMS_COMMAND_NONE, 0, 0);
+            ret = dlms_getLnMessages(&p, messages);
+        }
+        else
+        {
+            //EVS2 NOT SUPPORTED
+        }
+    }
+    settings->connected &= ~DLMS_CONNECTION_STATE_DLMS;
+    bb_clear(pdu);
+    return ret;
+}
+
+int cl_parseAAREResponse(dlmsSettings* settings, gxByteBuffer* reply)
+{
+    int ret;
+    unsigned char sd;
+    DLMS_ASSOCIATION_RESULT result;
+    unsigned char command = 0;
+    if ((ret = apdu_parsePDU(settings, reply, &result, &sd, &command)) != 0)
+    {
+        return ret;
+    }
+    if (result != DLMS_ASSOCIATION_RESULT_ACCEPTED)
+    {
+        if (result == DLMS_ASSOCIATION_RESULT_TRANSIENT_REJECTED)
+        {
+            return DLMS_ERROR_CODE_REJECTED_TRANSIENT;
+        }
+        return DLMS_ERROR_CODE_REJECTED_PERMAMENT;
+    }
+    settings->isAuthenticationRequired = sd == DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_REQUIRED;
+    if (!settings->isAuthenticationRequired)
+    {
+        settings->connected |= DLMS_CONNECTION_STATE_DLMS;
+    }
+    if (settings->dlmsVersionNumber != 6)
+    {
+        //Invalid DLMS version number.
+        return DLMS_ERROR_CODE_INVALID_VERSION_NUMBER;
+    }
+    return 0;
 }

@@ -305,17 +305,17 @@ int com_readDataBlock(
         //Check is there errors or more data from server
         while (reply_isMoreData(reply))
         {
-            if ((ret = cl_receiverReady(&connection->settings, reply->moreData, &rr)) != DLMS_ERROR_CODE_OK)
-            {
-                bb_clear(&rr);
-                return ret;
-            }
-            if ((ret = readDLMSPacket(connection, &rr, reply)) != DLMS_ERROR_CODE_OK)
-            {
-                bb_clear(&rr);
-                return ret;
-            }
-            bb_clear(&rr);
+            // if ((ret = cl_receiverReady(&connection->settings, reply->moreData, &rr)) != DLMS_ERROR_CODE_OK)
+            // {
+            //     bb_clear(&rr);
+            //     return ret;
+            // }
+            // if ((ret = readDLMSPacket(connection, &rr, reply)) != DLMS_ERROR_CODE_OK)
+            // {
+            //     bb_clear(&rr);
+            //     return ret;
+            // }
+            // bb_clear(&rr);
         }
     }
     return ret;
@@ -354,84 +354,38 @@ int com_updateInvocationCounter(
         reply_init(&reply);
         // Get meter's send and receive buffers size.
         if (ret = cl_snrmRequest(&connection->settings, &messages) != 0 ||
-        (ret = com_readDataBlock(connection, &messages, &reply)) != 0
+        (ret = com_readDataBlock(connection, &messages, &reply)) != 0 || 
+         (ret = cl_parseUAResponse(&connection->settings, &reply.data)) != 0
         )
         {
             printf("S");
         }
-        // ||
-        //     (ret = com_readDataBlock(connection, &messages, &reply)) != 0 ||
-        //     (ret = cl_parseUAResponse(&connection->settings, &reply.data)) != 0
-        // )
-        // {
-        //     bb_clear(&challenge);
-        //     mes_clear(&messages);
-        //     reply_clear(&reply);
-        //     if (connection->trace > GX_TRACE_LEVEL_OFF)
-        //     {
-        //         printf("SNRMRequest failed %s\r\n", hlp_getErrorMessage(ret));
-        //     }
-        //     return ret;
-        // }
-        // mes_clear(&messages);
-        // reply_clear(&reply);
-        // if ((ret = cl_aarqRequest(&connection->settings, &messages)) != 0 ||
-        //     (ret = com_readDataBlock(connection, &messages, &reply)) != 0 ||
-        //     (ret = cl_parseAAREResponse(&connection->settings, &reply.data)) != 0)
-        // {
-        //     bb_clear(&challenge);
-        //     mes_clear(&messages);
-        //     reply_clear(&reply);
-        //     if (ret == DLMS_ERROR_CODE_APPLICATION_CONTEXT_NAME_NOT_SUPPORTED)
-        //     {
-        //         if (connection->trace > GX_TRACE_LEVEL_OFF)
-        //         {
-        //             printf("Use Logical Name referencing is wrong. Change it!\r\n");
-        //         }
-        //         return ret;
-        //     }
-        //     if (connection->trace > GX_TRACE_LEVEL_OFF)
-        //     {
-        //         printf("AARQRequest failed %s\r\n", hlp_getErrorMessage(ret));
-        //     }
-        //     return ret;
-        // }
-        // mes_clear(&messages);
-        // reply_clear(&reply);
-        // if (connection->settings.maxPduSize == 0xFFFF)
-        // {
-        //     con_initializeBuffers(connection, connection->settings.maxPduSize);
-        // }
-        // else
-        // {
-        //     //Allocate 50 bytes more because some meters count this wrong and send few bytes too many.
-        //     con_initializeBuffers(connection, 50 + connection->settings.maxPduSize);
-        // }
-        // gxData d;
-        // cosem_init(BASE(d), DLMS_OBJECT_TYPE_DATA, invocationCounter);
-        // if ((ret = com_read(connection, BASE(d), 2)) == 0)
-        // {
-        //     connection->settings.cipher.invocationCounter = 1 + var_toInteger(&d.value);
-        //     if (connection->trace > GX_TRACE_LEVEL_WARNING)
-        //     {
-        //         printf("Invocation counter: %u (0x%X)\r\n",
-        //             connection->settings.cipher.invocationCounter,
-        //             connection->settings.cipher.invocationCounter);
-        //     }
-        //     //It's OK if this fails.
-        //     com_disconnect(connection);
-        //     connection->settings.clientAddress = add;
-        //     connection->settings.authentication = auth;
-        //     connection->settings.cipher.security = security;
-        //     bb_clear(&connection->settings.ctoSChallenge);
-        //     bb_set(&connection->settings.ctoSChallenge, challenge.data, challenge.size);
-        //     bb_clear(&challenge);
-        //     connection->settings.preEstablishedSystemTitle = preEstablishedSystemTitle;
-        //     if (dlms_usePreEstablishedConnection(&connection->settings))
-        //     {
-        //         connection->settings.negotiatedConformance |= DLMS_CONFORMANCE_GENERAL_PROTECTION;
-        //     }
-        // }
+        mes_clear(&messages);
+        reply_clear(&reply);
+        if ((ret = cl_aarqRequest(&connection->settings, &messages)) != 0 ||
+            (ret = com_readDataBlock(connection, &messages, &reply)) != 0 
+            // ||
+            // (ret = cl_parseAAREResponse(&connection->settings, &reply.data)) != 0
+        )
+        {
+            bb_clear(&challenge);
+            mes_clear(&messages);
+            reply_clear(&reply);
+            if (ret == DLMS_ERROR_CODE_APPLICATION_CONTEXT_NAME_NOT_SUPPORTED)
+            {
+                if (connection->trace > GX_TRACE_LEVEL_OFF)
+                {
+                    printf("Use Logical Name referencing is wrong. Change it!\r\n");
+                }
+                return ret;
+            }
+            if (connection->trace > GX_TRACE_LEVEL_OFF)
+            {
+                printf("AARQRequest failed %s\r\n", hlp_getErrorMessage(ret));
+            }
+            return ret;
+        }
+
     }
     return ret;
 }

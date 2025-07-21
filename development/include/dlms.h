@@ -24,4 +24,7 @@ dlmsSettings* settings,
 DLMS_DATA_REQUEST_TYPES type,
 gxByteBuffer* reply);
 
+int dlms_checkInit(
+dlmsSettings* settings);
+
 #endif

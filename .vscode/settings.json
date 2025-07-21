@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        ".fantomasignore": "ignore",
+        "compare": "c",
+        "cstddef": "c",
+        "limits": "c",
+        "type_traits": "c",
+        "xmemory": "c",
+        "xutility": "c",
+        "bytebuffer.h": "c",
+        "gxmem.h": "c",
+        "helpers.h": "c"
+    }
+}

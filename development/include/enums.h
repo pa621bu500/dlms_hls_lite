@@ -4,6 +4,7 @@
  typedef enum
     {
         DLMS_AUTHENTICATION_NONE = 0,
+        DLMS_AUTHENTICATION_LOW = 1,
         DLMS_AUTHENTICATION_HIGH_GMAC = 5
     } DLMS_AUTHENTICATION;
 
@@ -164,7 +165,14 @@ typedef enum
         DLMS_COMMAND_NONE = 0,
         DLMS_COMMAND_INITIATE_REQUEST = 0x1,
         DLMS_COMMAND_INITIATE_RESPONSE = 0x8,
+        DLMS_COMMAND_DISC = 0x53,
+        DLMS_COMMAND_AARQ = 0x60,
+        DLMS_COMMAND_AARE = 0x61,
+        DLMS_COMMAND_RELEASE_REQUEST = 0x62,
         DLMS_COMMAND_SNRM = 0x93,
+         DLMS_COMMAND_ACCESS_REQUEST = 0xD9,
+         DLMS_COMMAND_GLO_GET_REQUEST = 0xC8,
+         DLMS_COMMAND_GLO_SET_REQUEST = 0xC9,
     } DLMS_COMMAND;
 
 
@@ -178,5 +186,117 @@ typedef enum
         DLMS_CONNECTION_STATE_DLMS = 2,
 
     }DLMS_CONNECTION_STATE;
+
+    typedef enum
+    {
+         BER_TYPE_APPLICATION = 0x40,
+         BER_TYPE_CONSTRUCTED = 0x20,
+         BER_TYPE_CONTEXT = 0x80,
+        BER_TYPE_OBJECT_IDENTIFIER = 0x6,
+        BER_TYPE_OCTET_STRING = 0x4,
+        BER_TYPE_INTEGER,
+    };
+
+       // Connection types.
+    typedef enum {
+
+        //Connection is made for HDLC level.
+        DLMS_CONNECTION_STATE_HDLC = 1,
+
+    }DLMS_CONNECTION_STATE;
+
+        typedef enum
+    {
+        DLMS_ASSOCIATION_RESULT_ACCEPTED = 0,
+        DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED = 1,
+        DLMS_ASSOCIATION_RESULT_TRANSIENT_REJECTED = 2
+    } DLMS_ASSOCIATION_RESULT;
+
+      typedef enum
+    {
+
+        DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_REQUIRED = 14
+    } DLMS_SOURCE_DIAGNOSTIC;
+
+
+     typedef enum
+    {
+        /*
+        * IMPLICIT BIT STRING {version1  = 0} DEFAULT {version1}
+        */
+        PDU_TYPE_PROTOCOL_VERSION = 0,
+
+        // /*
+        // * Application-context-name
+        // */
+        PDU_TYPE_APPLICATION_CONTEXT_NAME = 1,
+
+        // /*
+        // * AP-title OPTIONAL
+        // */
+        // PDU_TYPE_CALLED_AP_TITLE = 2,
+
+        // /*
+        // * AE-qualifier OPTIONAL.
+        // */
+        // PDU_TYPE_CALLED_AE_QUALIFIER = 3,
+
+        // /*
+        // * AP-invocation-identifier OPTIONAL.
+        // */
+        // PDU_TYPE_CALLED_AP_INVOCATION_ID = 4,
+
+        // /*
+        // * AE-invocation-identifier OPTIONAL
+        // */
+        // PDU_TYPE_CALLED_AE_INVOCATION_ID = 5,
+
+        // /*
+        // * AP-title OPTIONAL
+        // */
+        // PDU_TYPE_CALLING_AP_TITLE = 6,
+
+        // /*
+        // * AE-qualifier OPTIONAL
+        // */
+        // PDU_TYPE_CALLING_AE_QUALIFIER = 7,
+
+        // /*
+        // * AP-invocation-identifier OPTIONAL
+        // */
+        // PDU_TYPE_CALLING_AP_INVOCATION_ID = 8,
+
+        // /*
+        // * AE-invocation-identifier OPTIONAL
+        // */
+        PDU_TYPE_CALLING_AE_INVOCATION_ID = 9,
+
+        // /*
+        // * The following field shall not be present if only the kernel is used.
+        // */
+        // PDU_TYPE_SENDER_ACSE_REQUIREMENTS = 10,
+
+        // /*
+        // * The following field shall only be present if the authentication
+        // * functional unit is selected.
+        // */
+        // PDU_TYPE_MECHANISM_NAME = 11,
+
+        // /*
+        // * The following field shall only be present if the authentication
+        // * functional unit is selected.
+        // */
+        PDU_TYPE_CALLING_AUTHENTICATION_VALUE = 12,
+
+        // /*
+        // * Implementation-data.
+        // */
+        // PDU_TYPE_IMPLEMENTATION_INFORMATION = 29,
+
+        // /*
+        // * Association-information OPTIONAL
+        // */
+        // PDU_TYPE_USER_INFORMATION = 30
+    } PDU_TYPE;
 
 #endif

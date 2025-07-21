@@ -180,6 +180,12 @@ void cip_clear(ciphering* target)
 #endif //DLMS_IGNORE_MALLOC
 }
 
+void resetBlockIndex(
+    dlmsSettings* settings)
+{
+    settings->blockIndex = 1;
+}
+
 // unsigned char getNextSend(
 //     dlmsSettings* settings, unsigned char first)
 // {
