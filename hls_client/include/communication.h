@@ -45,3 +45,12 @@ int readDLMSPacket(
 
         dlmsSettings settings;
     } clientConnection;
+
+
+    int com_read(
+    connection *connection,
+    gxObject* object,
+    unsigned char attributeOrdinal);
+
+    int com_disconnect(
+    connection* connection);

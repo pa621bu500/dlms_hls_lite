@@ -33,3 +33,15 @@ int hlp_setLogicalName(unsigned char ln[6], const char* name);
         int32_t value,
         unsigned char isSigned,
         unsigned char digits);
+
+
+
+            /**
+    * Convert string to integer.
+    *
+    * @param str
+    *            Parsed string.
+    * @return Value of string as integer.
+    */
+    int32_t hlp_stringToInt2(
+        const char* str, const char* end);
