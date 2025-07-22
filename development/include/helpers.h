@@ -16,32 +16,16 @@ unsigned char hlp_getValue(char c);
 
 unsigned char hlp_rand(void);
 
+int hlp_setObjectCount(
+uint32_t count,
+gxByteBuffer* buff);
+
 int hlp_setLogicalName(unsigned char ln[6], const char* name);
 
-    int hlp_setObjectCount(
-        uint32_t count,
-        gxByteBuffer* buff);
+unsigned char hlp_swapBits(unsigned char value);
 
-            unsigned char hlp_swapBits(unsigned char value);
+int hlp_getLogicalNameToString(const unsigned char value[6], char* ln);
 
-                int32_t hlp_stringToInt(
-        const char* str);
-
-            int hlp_intToString(
-        char* str,
-        int bufsize,
-        int32_t value,
-        unsigned char isSigned,
-        unsigned char digits);
-
-
-
-            /**
-    * Convert string to integer.
-    *
-    * @param str
-    *            Parsed string.
-    * @return Value of string as integer.
-    */
-    int32_t hlp_stringToInt2(
-        const char* str, const char* end);
+int hlp_getObjectCount2(
+gxByteBuffer* buff,
+uint16_t* count);
