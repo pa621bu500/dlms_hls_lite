@@ -24,6 +24,20 @@ gxByteBuffer* reply);
 // DLMS_DATA_REQUEST_TYPES type,
 // gxByteBuffer* reply);
 
+int dlms_getData2(
+    dlmsSettings* settings,
+    gxByteBuffer* reply,
+    gxReplyData* data,
+    unsigned char first);
+
+int dlms_getData3(
+    dlmsSettings* settings,
+    gxByteBuffer* reply,
+    gxReplyData* data,
+    gxReplyData* notify,
+    unsigned char first,
+    unsigned char* isNotify);
+
 int dlms_parseSnrmUaResponse(
     dlmsSettings* settings,
     gxByteBuffer* data);

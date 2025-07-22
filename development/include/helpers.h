@@ -1,6 +1,11 @@
 #include <stdint.h>    
 #include "bytebuffer.h"
 #include "../include/gxmem.h"
+
+#define GETU32(pt) (((uint32_t)(pt)[0] << 24) | \
+                    ((uint32_t)(pt)[1] << 16) | \
+                    ((uint32_t)(pt)[2] <<  8) | \
+                    ((uint32_t)(pt)[3]))
     
 int hlp_hexToBytes(
 const char* str,

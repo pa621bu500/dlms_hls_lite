@@ -86,6 +86,19 @@ int bb_getUInt8(
     return 0;
 }
 
+int bb_getUInt8ByIndex(
+    gxByteBuffer* arr,
+    uint32_t index,
+    unsigned char* value)
+{
+    if (index >= arr->size)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    *value = ((unsigned char*)arr->data)[index];
+    return 0;
+}
+
 int bb_getUInt16(
     gxByteBuffer* arr,
     uint16_t* value)
