@@ -596,3 +596,110 @@ int cl_read(
     }
     return ret;
 }
+
+
+int cl_disconnectRequest(dlmsSettings* settings, message* packets)
+{
+    int ret = 0;
+#ifndef DLMS_IGNORE_WRAPPER
+    gxByteBuffer bb;
+#endif //DLMS_IGNORE_WRAPPER
+    gxByteBuffer* reply = NULL;
+    mes_clear(packets);
+    settings->maxPduSize = 0xFFFF;
+    // If connection is not established, there is no need to send DisconnectRequest.
+    if ((settings->connected & DLMS_CONNECTION_STATE_HDLC) == 0)
+    {
+        return ret;
+    }
+    settings->connected &= ~DLMS_CONNECTION_STATE_HDLC;
+#ifdef DLMS_IGNORE_MALLOC
+    reply = packets->data[0];
+    ++packets->size;
+    bb_clear(reply);
+#else
+    reply = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
+    BYTE_BUFFER_INIT(reply);
+#endif //DLMS_IGNORE_MALLOC
+    switch (settings->interfaceType)
+    {
+#ifndef DLMS_IGNORE_HDLC
+    case DLMS_INTERFACE_TYPE_HDLC:
+    case DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E:
+    {
+        ret = dlms_getHdlcFrame(settings, DLMS_COMMAND_DISC, NULL, reply);
+#ifndef DLMS_IGNORE_MALLOC
+        if (ret == 0)
+        {
+            ret = mes_push(packets, reply);
+        }
+        else
+        {
+            gxfree(reply);
+        }
+#endif //DLMS_IGNORE_MALLOC
+    }
+    break;
+#endif //DLMS_IGNORE_HDLC
+#ifndef DLMS_IGNORE_PLC
+    case DLMS_INTERFACE_TYPE_PLC:
+#ifndef DLMS_IGNORE_MALLOC
+        gxfree(reply);
+#endif //DLMS_IGNORE_MALLOC
+        break;
+    case DLMS_INTERFACE_TYPE_PLC_HDLC:
+    {
+        ret = dlms_getMacHdlcFrame(settings, DLMS_COMMAND_DISC, 0, NULL, reply);
+#ifndef DLMS_IGNORE_MALLOC
+        if (ret == 0)
+        {
+            ret = mes_push(packets, reply);
+        }
+        else
+        {
+            gxfree(reply);
+        }
+#endif //DLMS_IGNORE_MALLOC
+    }
+    break;
+#endif //DLMS_IGNORE_PLC
+#ifndef DLMS_IGNORE_WRAPPER
+    case DLMS_INTERFACE_TYPE_WRAPPER:
+    {
+        BYTE_BUFFER_INIT(&bb);
+        bb_setUInt8(&bb, DLMS_COMMAND_RELEASE_REQUEST);
+        bb_setUInt8(&bb, 0x0);
+        ret = dlms_getWrapperFrame(settings, DLMS_COMMAND_NONE, &bb, reply);
+#ifndef DLMS_IGNORE_MALLOC
+        if (ret == 0)
+        {
+            ret = mes_push(packets, reply);
+        }
+        else
+        {
+            gxfree(reply);
+        }
+#endif //DLMS_IGNORE_MALLOC
+        bb_clear(&bb);
+    }
+    break;
+#endif //DLMS_IGNORE_WRAPPER
+    default:
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        break;
+    }
+#ifndef DLMS_IGNORE_HDLC
+    if (dlms_useHdlc(settings->interfaceType))
+    {
+        //Restore default HDLC values.
+        settings->maxInfoTX = settings->initializeMaxInfoTX;
+        settings->maxInfoRX = settings->initializeMaxInfoRX;
+        settings->windowSizeTX = settings->initializeWindowSizeTX;
+        settings->windowSizeRX = settings->initializeWindowSizeRX;
+    }
+#endif //DLMS_IGNORE_HDLC
+    //Restore default values.
+    settings->maxPduSize = settings->initializePduSize;
+    resetFrameSequence(settings);
+    return ret;
+}

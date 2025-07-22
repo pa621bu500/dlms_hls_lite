@@ -13,6 +13,7 @@
         "client.h": "c",
         "connection.h": "c",
         "cosem.h": "c",
-        "dlms.h": "c"
+        "dlms.h": "c",
+        "variant.h": "c"
     }
 }

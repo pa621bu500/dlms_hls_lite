@@ -24,6 +24,7 @@
             gxByteBuffer* byteArr;
             gxByteBuffer* strUtfVal;
             gxByteBuffer* strVal;
+            uint32_t ulVal;
             variantArray* Arr;
             // bitArray* bitArr;
         };

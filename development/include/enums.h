@@ -128,7 +128,8 @@ typedef enum
         DLMS_DATA_TYPE_UINT8 = 17,
         DLMS_DATA_TYPE_INT64 = 20,
         DLMS_OBJECT_TYPE_DISCONNECT_CONTROL = 70,
-
+        DLMS_DATA_TYPE_DELTA_UINT32 = 33,
+        DLMS_DATA_TYPE_BYREF = 0x80
     } DLMS_DATA_TYPE;
 typedef enum
     {
