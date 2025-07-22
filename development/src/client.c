@@ -30,10 +30,7 @@ int cl_snrmRequest(dlmsSettings* settings, message* messages)
     {
         return 0;
     }
-    if (settings->interfaceType == DLMS_INTERFACE_TYPE_WRAPPER)
-    {
-        return DLMS_ERROR_CODE_OK;
-    }
+
     resetFrameSequence(settings);
 #ifdef DLMS_IGNORE_MALLOC
     //EVS2 NOT SUPPORTED
@@ -641,49 +638,6 @@ int cl_disconnectRequest(dlmsSettings* settings, message* packets)
     }
     break;
 #endif //DLMS_IGNORE_HDLC
-#ifndef DLMS_IGNORE_PLC
-    case DLMS_INTERFACE_TYPE_PLC:
-#ifndef DLMS_IGNORE_MALLOC
-        gxfree(reply);
-#endif //DLMS_IGNORE_MALLOC
-        break;
-    case DLMS_INTERFACE_TYPE_PLC_HDLC:
-    {
-        ret = dlms_getMacHdlcFrame(settings, DLMS_COMMAND_DISC, 0, NULL, reply);
-#ifndef DLMS_IGNORE_MALLOC
-        if (ret == 0)
-        {
-            ret = mes_push(packets, reply);
-        }
-        else
-        {
-            gxfree(reply);
-        }
-#endif //DLMS_IGNORE_MALLOC
-    }
-    break;
-#endif //DLMS_IGNORE_PLC
-#ifndef DLMS_IGNORE_WRAPPER
-    case DLMS_INTERFACE_TYPE_WRAPPER:
-    {
-        BYTE_BUFFER_INIT(&bb);
-        bb_setUInt8(&bb, DLMS_COMMAND_RELEASE_REQUEST);
-        bb_setUInt8(&bb, 0x0);
-        ret = dlms_getWrapperFrame(settings, DLMS_COMMAND_NONE, &bb, reply);
-#ifndef DLMS_IGNORE_MALLOC
-        if (ret == 0)
-        {
-            ret = mes_push(packets, reply);
-        }
-        else
-        {
-            gxfree(reply);
-        }
-#endif //DLMS_IGNORE_MALLOC
-        bb_clear(&bb);
-    }
-    break;
-#endif //DLMS_IGNORE_WRAPPER
     default:
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         break;

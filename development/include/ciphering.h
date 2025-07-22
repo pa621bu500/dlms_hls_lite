@@ -79,26 +79,26 @@ extern "C"
          * Encrypt data.
          */
 #ifndef DLMS_IGNORE_MALLOC
-        int cip_encrypt(
-            ciphering *settings,
-            DLMS_SECURITY security,
-            // DLMS_COUNT_TYPE type,
-            uint32_t frameCounter,
-            unsigned char tag,
-            const unsigned char *systemTitle,
-            gxByteBuffer *key,
-            gxByteBuffer *input);
+    int cip_encrypt(
+        ciphering* settings,
+        DLMS_SECURITY security,
+        DLMS_COUNT_TYPE type,
+        uint32_t frameCounter,
+        unsigned char tag,
+        const unsigned char* systemTitle,
+        gxByteBuffer* key,
+        gxByteBuffer* input);
 #else
-int cip_encrypt(
-    ciphering *settings,
-    DLMS_SECURITY security,
-    DLMS_COUNT_TYPE type,
-    uint32_t frameCounter,
-    unsigned char tag,
-    const unsigned char *systemTitle,
-    unsigned char *key,
-    gxByteBuffer *input);
-#endif // DLMS_IGNORE_MALLOC
+    int cip_encrypt(
+        ciphering* settings,
+        DLMS_SECURITY security,
+        DLMS_COUNT_TYPE type,
+        uint32_t frameCounter,
+        unsigned char tag,
+        const unsigned char* systemTitle,
+        unsigned char* key,
+        gxByteBuffer* input);
+#endif //DLMS_IGNORE_MALLOC
 
         /**
          * Decrypt data.

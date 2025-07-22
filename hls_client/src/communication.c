@@ -21,6 +21,7 @@
 #include "../../development/include/gxobjects.h"
 #include "../../development/include/bytebuffer.h"
 #include "../../development/include/client.h"
+#include "../../development/include/variant.h"
 
 int com_open(
     connection *connection,
@@ -499,7 +500,8 @@ int com_initializeConnection(
                 }
                 else
                 {
-                    printf("AARQRequest failed %s\r\n", hlp_getErrorMessage(ret));
+                     printf("AARQRequest failed");
+                    // printf("AARQRequest failed %s\r\n", hlp_getErrorMessage(ret));
                 }
             }
             mes_clear(&messages);
@@ -604,7 +606,7 @@ int com_read(
         (ret = com_readDataBlock(connection, &data, &reply)) != 0 ||
         (ret = cl_updateValue(&connection->settings, object, attributeOrdinal, &reply.dataValue)) != 0)
     {
-        com_reportError("ReadObject failed", object, attributeOrdinal, ret);
+        printf("ReadObject failed");
     }
     mes_clear(&data);
     reply_clear(&reply);
