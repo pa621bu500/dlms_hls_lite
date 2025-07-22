@@ -592,67 +592,67 @@ int com_read(
     return ret;
 }
 
-int com_readValue_new(connection *connection, gxObject *object, unsigned char index, int comm_item, t_poll_result *poll_result)
-{
-    int ret;
-    char *data = NULL;
-    char ln[25];
-    ret = hlp_getLogicalNameToString(object->logicalName, ln);
-    if (ret != DLMS_ERROR_CODE_OK)
-    {
-        return ret;
-    }
-    if (connection->trace > GX_TRACE_LEVEL_WARNING)
-    {
-        // printf("-------- Reading Object %s %s\r\n", obj_typeToString2(object->objectType), ln);
-    }
-    ret = com_read(connection, object, index);
-    if (ret != DLMS_ERROR_CODE_OK)
-    {
-        if (connection->trace > GX_TRACE_LEVEL_OFF)
-        {
-            printf("Failed to read object %s %s attribute index %d\r\n", obj_typeToString2(object->objectType), ln, index);
-        }
-        // Return error if not DLMS error.
-        if (ret != DLMS_ERROR_CODE_READ_WRITE_DENIED)
-        {
-            return ret;
-        }
-    }
-    if (connection->trace > GX_TRACE_LEVEL_WARNING)
-    {
-        ret = obj_toString(object, &data);
-        if (ret != DLMS_ERROR_CODE_OK)
-        {
-            return ret;
-        }
-        if (data != NULL)
-        {
-            // printf("%s\n", data);
-            char *line = strtok(data, "\n");
-            while (line != NULL)
-            {
-                char *valuePos = strstr(line, "Index: 2 Value:");
-                if (valuePos != NULL)
-                {
-                    // Move the pointer to the content after "Value:"
-                    char *valueStart = strstr(valuePos, "Value:");
-                    if (valueStart != NULL)
-                    {
-                        valueStart += strlen("Value:"); // Skip past "Value:"
-                        while (*valueStart == ' ')
-                            valueStart++; // Trim leading spaces
-                        parse_rx(valueStart, comm_item, poll_result);
-                    }
-                }
-                line = strtok(NULL, "\n");
-            }
-            free(data);
-            data = NULL;
-        }
-    }
-    return 0;
-}
+// int com_readValue_new(connection *connection, gxObject *object, unsigned char index, int comm_item, t_poll_result *poll_result)
+// {
+//     int ret;
+//     char *data = NULL;
+//     char ln[25];
+//     ret = hlp_getLogicalNameToString(object->logicalName, ln);
+//     if (ret != DLMS_ERROR_CODE_OK)
+//     {
+//         return ret;
+//     }
+//     if (connection->trace > GX_TRACE_LEVEL_WARNING)
+//     {
+//         // printf("-------- Reading Object %s %s\r\n", obj_typeToString2(object->objectType), ln);
+//     }
+//     ret = com_read(connection, object, index);
+//     if (ret != DLMS_ERROR_CODE_OK)
+//     {
+//         if (connection->trace > GX_TRACE_LEVEL_OFF)
+//         {
+//             printf("Failed to read object %s %s attribute index %d\r\n", obj_typeToString2(object->objectType), ln, index);
+//         }
+//         // Return error if not DLMS error.
+//         if (ret != DLMS_ERROR_CODE_READ_WRITE_DENIED)
+//         {
+//             return ret;
+//         }
+//     }
+//     if (connection->trace > GX_TRACE_LEVEL_WARNING)
+//     {
+//         ret = obj_toString(object, &data);
+//         if (ret != DLMS_ERROR_CODE_OK)
+//         {
+//             return ret;
+//         }
+//         if (data != NULL)
+//         {
+//             // printf("%s\n", data);
+//             char *line = strtok(data, "\n");
+//             while (line != NULL)
+//             {
+//                 char *valuePos = strstr(line, "Index: 2 Value:");
+//                 if (valuePos != NULL)
+//                 {
+//                     // Move the pointer to the content after "Value:"
+//                     char *valueStart = strstr(valuePos, "Value:");
+//                     if (valueStart != NULL)
+//                     {
+//                         valueStart += strlen("Value:"); // Skip past "Value:"
+//                         while (*valueStart == ' ')
+//                             valueStart++; // Trim leading spaces
+//                         parse_rx(valueStart, comm_item, poll_result);
+//                     }
+//                 }
+//                 line = strtok(NULL, "\n");
+//             }
+//             free(data);
+//             data = NULL;
+//         }
+//     }
+//     return 0;
+// }
 
 int com_initializeOpticalHead(
     connection *connection)
