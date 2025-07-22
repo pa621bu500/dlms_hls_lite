@@ -7,11 +7,8 @@
 #include <assert.h>
 #include <string.h>
 
-
-
-
 int BYTE_BUFFER_INIT(
-    gxByteBuffer* arr)
+    gxByteBuffer *arr)
 {
     arr->capacity = 0;
     arr->data = NULL;
@@ -20,14 +17,14 @@ int BYTE_BUFFER_INIT(
     return 0;
 }
 
-char bb_isAttached(gxByteBuffer* arr)
+char bb_isAttached(gxByteBuffer *arr)
 {
     if (arr == NULL)
     {
         return 0;
     }
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
-    //If byte buffer is attached.
+    // If byte buffer is attached.
     return (arr->capacity & 0x80000000) == 0x80000000;
 #else
     return (arr->capacity & 0x8000) == 0x8000;
@@ -36,12 +33,12 @@ char bb_isAttached(gxByteBuffer* arr)
 
 #ifndef DLMS_IGNORE_MALLOC
 int bb_addHexString(
-    gxByteBuffer* arr,
-    const char* str)
+    gxByteBuffer *arr,
+    const char *str)
 {
     uint16_t count;
     int ret;
-    unsigned char* buffer = NULL;
+    unsigned char *buffer = NULL;
     ret = hlp_hexToBytes(str, &buffer, &count);
     if (ret != 0)
     {
@@ -54,13 +51,13 @@ int bb_addHexString(
     }
     return 0;
 }
-#endif //DLMS_IGNORE_MALLOC
+#endif // DLMS_IGNORE_MALLOC
 
 int bb_clear(
-    gxByteBuffer* arr)
+    gxByteBuffer *arr)
 {
 #ifndef DLMS_IGNORE_MALLOC
-    //If byte buffer is attached.
+    // If byte buffer is attached.
     if (!bb_isAttached(arr))
     {
         if (arr->data != NULL)
@@ -70,30 +67,30 @@ int bb_clear(
         }
         arr->capacity = 0;
     }
-    #endif //DLMS_IGNORE_MALLOC
-        arr->size = 0;
-        arr->position = 0;
-        return 0;
+#endif // DLMS_IGNORE_MALLOC
+    arr->size = 0;
+    arr->position = 0;
+    return 0;
 }
 
 int bb_getUInt8(
-    gxByteBuffer* arr,
-    unsigned char* value)
+    gxByteBuffer *arr,
+    unsigned char *value)
 {
     if (arr->position >= arr->size)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
-    *value = ((unsigned char*)arr->data)[arr->position];
+    *value = ((unsigned char *)arr->data)[arr->position];
     ++arr->position;
     return 0;
 }
 
-
 int bb_setUInt8ByIndex(
-    gxByteBuffer* arr,
+    gxByteBuffer *arr,
     uint32_t index,
-    unsigned char item){
+    unsigned char item)
+{
     if (arr == NULL)
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
@@ -107,7 +104,7 @@ int bb_setUInt8ByIndex(
 }
 
 int bb_setUInt8(
-    gxByteBuffer* arr,
+    gxByteBuffer *arr,
     unsigned char item)
 {
     int ret = bb_setUInt8ByIndex(arr, bb_size(arr), item);
@@ -118,19 +115,18 @@ int bb_setUInt8(
     return ret;
 }
 
-uint32_t bb_size(gxByteBuffer* arr){
+uint32_t bb_size(gxByteBuffer *arr)
+{
     return arr != NULL ? arr->size : 0;
 }
 
-
-
 int bb_attach(
-    gxByteBuffer* arr,
-    unsigned char* value,
+    gxByteBuffer *arr,
+    unsigned char *value,
     uint32_t count,
     uint32_t capacity)
 {
-    //If capacity is 1 value is cast t
+    // If capacity is 1 value is cast t
     if (value == NULL || capacity < count)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
@@ -146,8 +142,7 @@ int bb_attach(
     return 0;
 }
 
-
-uint32_t bb_available(gxByteBuffer* arr)
+uint32_t bb_available(gxByteBuffer *arr)
 {
     if (arr == NULL)
     {
@@ -156,11 +151,9 @@ uint32_t bb_available(gxByteBuffer* arr)
     return arr->size - arr->position;
 }
 
-
-
 int bb_set2(
-    gxByteBuffer* arr,
-    gxByteBuffer* data,
+    gxByteBuffer *arr,
+    gxByteBuffer *data,
     uint32_t index,
     uint32_t count)
 
@@ -168,7 +161,7 @@ int bb_set2(
     if (data != NULL && count != 0)
     {
 
-    if (count == (uint32_t)-1)
+        if (count == (uint32_t)-1)
 
         {
             count = data->size - index;
@@ -179,10 +172,9 @@ int bb_set2(
             data->position += count;
         }
         return ret;
-}
+    }
     return 0;
 }
-
 
 // int bb_getUInt8ByIndex(
 //     gxByteBuffer* arr,
@@ -197,7 +189,7 @@ int bb_set2(
 //     return 0;
 // }
 int bb_setUInt16(
-    gxByteBuffer* arr,
+    gxByteBuffer *arr,
     uint16_t item)
 {
     int ret = bb_setUInt16ByIndex(arr, arr->size, item);
@@ -209,18 +201,18 @@ int bb_setUInt16(
 }
 
 int bb_addString(
-    gxByteBuffer* arr,
-    const char* value)
+    gxByteBuffer *arr,
+    const char *value)
 {
     if (value != NULL)
     {
         int len = (int)strlen(value);
         if (len > 0)
         {
-            int ret = bb_set(arr, (const unsigned char*)value, (uint16_t)(len + 1));
+            int ret = bb_set(arr, (const unsigned char *)value, (uint16_t)(len + 1));
             if (ret == 0)
             {
-                //Add end of string, but that is not added to the length.
+                // Add end of string, but that is not added to the length.
                 arr->data[arr->size - 1] = '\0';
                 --arr->size;
             }
@@ -279,19 +271,18 @@ int bb_addString(
 //     return DLMS_ERROR_CODE_OK;
 // }
 
-
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 int bb_capacity(
-    gxByteBuffer* arr,
+    gxByteBuffer *arr,
     uint32_t capacity)
 #else
 int bb_capacity(
-    gxByteBuffer* arr,
+    gxByteBuffer *arr,
     uint16_t capacity)
 #endif
 {
 #ifndef DLMS_IGNORE_MALLOC
-    //Capacity can't change if it's attached.
+    // Capacity can't change if it's attached.
     if (!bb_isAttached(arr))
     {
         if (capacity == 0)
@@ -307,7 +298,7 @@ int bb_capacity(
         {
             if (arr->capacity == 0)
             {
-                arr->data = (unsigned char*)gxmalloc(capacity);
+                arr->data = (unsigned char *)gxmalloc(capacity);
                 if (arr->data == NULL)
                 {
                     return DLMS_ERROR_CODE_OUTOFMEMORY;
@@ -317,30 +308,30 @@ int bb_capacity(
             {
                 printf("arr=%p\n", arr);
                 printf("arr->data=%p\n", arr->data);
-                unsigned char* old = arr->data;
-                #ifdef gxrealloc
-                            
-                                //If compiler supports realloc.
-                                arr->data = (unsigned char*)gxrealloc(arr->data, capacity);
-                                //If not enought memory available.
-                                if (arr->data == NULL)
-                                {
-                                    arr->data = old;
-                                    return DLMS_ERROR_CODE_OUTOFMEMORY;
-                                }
-                #else
-                                //If compiler doesn't support realloc.
-                                arr->data = (unsigned char*)gxmalloc(capacity);
-                                //If not enought memory available.
-                                if (arr->data == NULL)
-                                {
-                                    arr->data = old;
-                                    return DLMS_ERROR_CODE_OUTOFMEMORY;
-                                }
-                                memcpy(arr->data, old, arr->size);
-                                gxfree(old);
-                #endif // gxrealloc       
-            }    
+                unsigned char *old = arr->data;
+#ifdef gxrealloc
+
+                // If compiler supports realloc.
+                arr->data = (unsigned char *)gxrealloc(arr->data, capacity);
+                // If not enought memory available.
+                if (arr->data == NULL)
+                {
+                    arr->data = old;
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
+#else
+                // If compiler doesn't support realloc.
+                arr->data = (unsigned char *)gxmalloc(capacity);
+                // If not enought memory available.
+                if (arr->data == NULL)
+                {
+                    arr->data = old;
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
+                memcpy(arr->data, old, arr->size);
+                gxfree(old);
+#endif // gxrealloc
+            }
             if (arr->size > capacity)
             {
                 arr->size = capacity;
@@ -348,7 +339,7 @@ int bb_capacity(
         }
         arr->capacity = capacity;
     }
-#endif //DLMS_IGNORE_MALLOC
+#endif // DLMS_IGNORE_MALLOC
     if (bb_getCapacity(arr) < capacity)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
@@ -356,17 +347,15 @@ int bb_capacity(
     return DLMS_ERROR_CODE_OK;
 }
 
-
-uint32_t bb_getCapacity(gxByteBuffer* arr)
+uint32_t bb_getCapacity(gxByteBuffer *arr)
 {
 
     return arr->capacity & 0x7FFFFFFF;
 }
 
-
 int bb_set(
-    gxByteBuffer* arr,
-    const unsigned char* pSource,
+    gxByteBuffer *arr,
+    const unsigned char *pSource,
     uint32_t count)
 {
     if (count != 0)
@@ -391,18 +380,18 @@ int bb_set(
 
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 int bb_allocate(
-    gxByteBuffer* arr,
+    gxByteBuffer *arr,
     uint32_t index,
     uint32_t dataSize)
 #else
- //EVS2 NOT SUPPORTED
+// EVS2 NOT SUPPORTED
 #endif
 {
 #ifndef DLMS_IGNORE_MALLOC
     if (!bb_isAttached(arr) && (arr->capacity == 0 || index + dataSize > arr->capacity))
     {
         unsigned char empty = arr->capacity == 0;
-        //If data is append fist time.
+        // If data is append fist time.
         if (!(dataSize > VECTOR_CAPACITY || arr->capacity == 0))
         {
             dataSize = VECTOR_CAPACITY;
@@ -410,7 +399,7 @@ int bb_allocate(
         arr->capacity += dataSize;
         if (empty)
         {
-            arr->data = (unsigned char*)gxmalloc(arr->capacity);
+            arr->data = (unsigned char *)gxmalloc(arr->capacity);
             if (arr->data == NULL)
             {
                 arr->capacity -= dataSize;
@@ -419,38 +408,37 @@ int bb_allocate(
         }
         else
         {
-            unsigned char* old = arr->data;
-        #ifdef gxrealloc
-                    //If compiler supports realloc.
-                    arr->data = (unsigned char*)gxrealloc(arr->data, arr->capacity);
-                    if (arr->data == NULL)
-                    {
-                        arr->capacity -= dataSize;
-                        arr->data = old;
-                        return DLMS_ERROR_CODE_OUTOFMEMORY;
-                    }
-        #else
-            //EVS2 NOT SUPPORTED
-        #endif //gxrealloc
-                }
-            }
-        #endif //DLMS_IGNORE_MALLOC
-            if (bb_getCapacity(arr) < index + dataSize)
+            unsigned char *old = arr->data;
+#ifdef gxrealloc
+            // If compiler supports realloc.
+            arr->data = (unsigned char *)gxrealloc(arr->data, arr->capacity);
+            if (arr->data == NULL)
             {
+                arr->capacity -= dataSize;
+                arr->data = old;
                 return DLMS_ERROR_CODE_OUTOFMEMORY;
             }
+#else
+            // EVS2 NOT SUPPORTED
+#endif // gxrealloc
+        }
+    }
+#endif // DLMS_IGNORE_MALLOC
+    if (bb_getCapacity(arr) < index + dataSize)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
     return 0;
 }
 
-
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 int bb_setUInt16ByIndex(
-    gxByteBuffer* arr,
+    gxByteBuffer *arr,
     uint32_t index,
     uint16_t item)
 #else
 int bb_setUInt16ByIndex(
-    gxByteBuffer* arr,
+    gxByteBuffer *arr,
     uint16_t index,
     uint16_t item)
 #endif
@@ -468,22 +456,21 @@ int bb_setUInt16ByIndex(
     return ret;
 }
 
-
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 int bb_move(
-    gxByteBuffer* bb,
+    gxByteBuffer *bb,
     uint32_t srcPos,
     uint32_t destPos,
     uint32_t count)
 #else
 int bb_move(
-    gxByteBuffer* bb,
+    gxByteBuffer *bb,
     uint16_t srcPos,
     uint16_t destPos,
     uint16_t count)
 #endif
 {
-    //If items are removed.
+    // If items are removed.
     if (srcPos > destPos)
     {
         if (bb->size < destPos + count)
@@ -493,7 +480,7 @@ int bb_move(
     }
     else
     {
-        //Append data.
+        // Append data.
         if (bb_getCapacity(bb) < count + destPos)
         {
             int ret;
@@ -509,7 +496,7 @@ int bb_move(
     }
     if (count != 0)
     {
-        //Do not use memcpy here!
+        // Do not use memcpy here!
         memmove(bb->data + destPos, bb->data + srcPos, count);
         bb->size = (destPos + count);
         if (bb->position > bb->size)

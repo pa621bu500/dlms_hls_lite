@@ -186,6 +186,12 @@ void resetBlockIndex(
     settings->blockIndex = 1;
 }
 
+unsigned char isCiphered(
+    ciphering* cipher)
+{
+    return cipher->security != DLMS_SECURITY_NONE;
+}
+
 // unsigned char getNextSend(
 //     dlmsSettings* settings, unsigned char first)
 // {

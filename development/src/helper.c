@@ -98,3 +98,48 @@ unsigned char hlp_getValue(char c)
     }
     return value;
 }
+
+
+// Set count of items.
+int hlp_setObjectCount(uint32_t count, gxByteBuffer* buff)
+{
+    int ret;
+    if (count < 0x80)
+    {
+        ret = bb_setUInt8(buff, (unsigned char)count);
+    }
+    // else if (count < 0x100)
+    // {
+    //     if ((ret = bb_setUInt8(buff, 0x81)) == 0)
+    //     {
+    //         ret = bb_setUInt8(buff, (unsigned char)count);
+    //     }
+    // }
+    // else if (count < 0x10000)
+    // {
+    //     if ((ret = bb_setUInt8(buff, 0x82)) == 0)
+    //     {
+    //         ret = bb_setUInt16(buff, (uint16_t)count);
+    //     }
+    // }
+    // else
+    // {
+    //     if ((ret = bb_setUInt8(buff, 0x84)) == 0)
+    //     {
+    //         ret = bb_setUInt32(buff, count);
+    //     }
+    // }
+    return ret;
+}
+
+
+unsigned char hlp_swapBits(unsigned char value)
+{
+    unsigned char ret = 0, pos;
+    for (pos = 0; pos != 8; ++pos)
+    {
+        ret = (unsigned char)((ret << 1) | (value & 0x01));
+        value = (unsigned char)(value >> 1);
+    }
+    return ret;
+}

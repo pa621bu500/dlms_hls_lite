@@ -298,8 +298,8 @@ int cl_aarqRequest(
         if (settings->useLogicalNameReferencing)
         {
             gxLNParameters p;
-            params_initLN(&p, settings, 0, DLMS_COMMAND_AARQ, 0, pdu, NULL, 0xFF, DLMS_COMMAND_NONE, 0, 0);
-            ret = dlms_getLnMessages(&p, messages);
+            // params_initLN(&p, settings, 0, DLMS_COMMAND_AARQ, 0, pdu, NULL, 0xFF, DLMS_COMMAND_NONE, 0, 0);
+            // ret = dlms_getLnMessages(&p, messages);
         }
         else
         {
@@ -311,33 +311,33 @@ int cl_aarqRequest(
     return ret;
 }
 
-int cl_parseAAREResponse(dlmsSettings* settings, gxByteBuffer* reply)
-{
-    int ret;
-    unsigned char sd;
-    DLMS_ASSOCIATION_RESULT result;
-    unsigned char command = 0;
-    if ((ret = apdu_parsePDU(settings, reply, &result, &sd, &command)) != 0)
-    {
-        return ret;
-    }
-    if (result != DLMS_ASSOCIATION_RESULT_ACCEPTED)
-    {
-        if (result == DLMS_ASSOCIATION_RESULT_TRANSIENT_REJECTED)
-        {
-            return DLMS_ERROR_CODE_REJECTED_TRANSIENT;
-        }
-        return DLMS_ERROR_CODE_REJECTED_PERMAMENT;
-    }
-    settings->isAuthenticationRequired = sd == DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_REQUIRED;
-    if (!settings->isAuthenticationRequired)
-    {
-        settings->connected |= DLMS_CONNECTION_STATE_DLMS;
-    }
-    if (settings->dlmsVersionNumber != 6)
-    {
-        //Invalid DLMS version number.
-        return DLMS_ERROR_CODE_INVALID_VERSION_NUMBER;
-    }
-    return 0;
-}
+// int cl_parseAAREResponse(dlmsSettings* settings, gxByteBuffer* reply)
+// {
+//     int ret;
+//     unsigned char sd;
+//     DLMS_ASSOCIATION_RESULT result;
+//     unsigned char command = 0;
+//     if ((ret = apdu_parsePDU(settings, reply, &result, &sd, &command)) != 0)
+//     {
+//         return ret;
+//     }
+//     if (result != DLMS_ASSOCIATION_RESULT_ACCEPTED)
+//     {
+//         if (result == DLMS_ASSOCIATION_RESULT_TRANSIENT_REJECTED)
+//         {
+//             return DLMS_ERROR_CODE_REJECTED_TRANSIENT;
+//         }
+//         return DLMS_ERROR_CODE_REJECTED_PERMAMENT;
+//     }
+//     settings->isAuthenticationRequired = sd == DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_REQUIRED;
+//     if (!settings->isAuthenticationRequired)
+//     {
+//         settings->connected |= DLMS_CONNECTION_STATE_DLMS;
+//     }
+//     if (settings->dlmsVersionNumber != 6)
+//     {
+//         //Invalid DLMS version number.
+//         return DLMS_ERROR_CODE_INVALID_VERSION_NUMBER;
+//     }
+//     return 0;
+// }

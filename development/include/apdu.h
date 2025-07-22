@@ -5,9 +5,12 @@
 #include "bytebuffer.h"
 
 
-    int apdu_generateAarq(
-        dlmsSettings* settings,
-        gxByteBuffer* data);
+int apdu_generateAarq(
+    dlmsSettings* settings,
+    gxByteBuffer* data);
+int apdu_generateUserInformation(
+    dlmsSettings* settings,
+    gxByteBuffer* data);
 
 
 #endif //APDU_H

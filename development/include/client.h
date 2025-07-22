@@ -15,6 +15,10 @@ dlmsSettings* settings,
 gxByteBuffer* data);
 #endif
 
+int cl_aarqRequest(
+dlmsSettings* settings,
+message* messages);
+
 
 int cl_parseUAResponse(
 dlmsSettings* settings,

@@ -354,8 +354,9 @@ int com_updateInvocationCounter(
         reply_init(&reply);
         // Get meter's send and receive buffers size.
         if (ret = cl_snrmRequest(&connection->settings, &messages) != 0 ||
-        (ret = com_readDataBlock(connection, &messages, &reply)) != 0 || 
-         (ret = cl_parseUAResponse(&connection->settings, &reply.data)) != 0
+        (ret = com_readDataBlock(connection, &messages, &reply)) != 0 
+        // || 
+        //  (ret = cl_parseUAResponse(&connection->settings, &reply.data)) != 0
         )
         {
             printf("S");
@@ -379,10 +380,10 @@ int com_updateInvocationCounter(
                 }
                 return ret;
             }
-            if (connection->trace > GX_TRACE_LEVEL_OFF)
-            {
-                printf("AARQRequest failed %s\r\n", hlp_getErrorMessage(ret));
-            }
+            // if (connection->trace > GX_TRACE_LEVEL_OFF)
+            // {
+            //     printf("AARQRequest failed %s\r\n", hlp_getErrorMessage(ret));
+            // }
             return ret;
         }
 

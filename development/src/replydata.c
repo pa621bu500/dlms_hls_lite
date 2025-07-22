@@ -44,7 +44,7 @@ void reply_clear2(gxReplyData* reply, unsigned char clearData)
         reply->preEstablished = 0;
     }
     reply->complete = 0;
-    var_clear(&reply->dataValue);
+    // var_clear(&reply->dataValue);
     reply->totalCount = 0;
     reply->readPosition = 0;
     reply->packetLength = 0;

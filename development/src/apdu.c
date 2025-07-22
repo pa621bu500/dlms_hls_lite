@@ -5,6 +5,20 @@
 #include "../include/errorcodes.h"
 #include "../include/ciphering.h"
 
+
+
+unsigned char useDedicatedKey(dlmsSettings* settings)
+{
+#ifndef DLMS_IGNORE_MALLOC
+    if (settings->cipher.dedicatedKey == NULL)
+    {
+        return 0;
+    }
+    return settings->cipher.dedicatedKey->size == 16;
+#else
+    return memcmp(settings->cipher.dedicatedKey, EMPTY_KEY, sizeof(EMPTY_KEY)) != 0;
+#endif //DLMS_IGNORE_MALLOC
+}
 int apdu_getAuthenticationString(
     dlmsSettings* settings,
     gxByteBuffer* data)
@@ -188,6 +202,146 @@ int apdu_generateApplicationContextName(
         {
             return ret;
         }
+    }
+    return 0;
+}
+
+
+int apdu_generateUserInformation(
+    dlmsSettings* settings,
+    gxByteBuffer* data)
+{
+    int ret = 0;
+    bb_setUInt8(data, BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | (unsigned char)PDU_TYPE_USER_INFORMATION);
+#ifndef DLMS_IGNORE_HIGH_GMAC
+    if (!isCiphered(&settings->cipher))
+#endif //DLMS_IGNORE_HIGH_GMAC
+    {
+        // Length for AARQ user field
+        bb_setUInt8(data, 0x10);
+        // Coding the choice for user-information (Octet STRING, universal)
+        bb_setUInt8(data, BER_TYPE_OCTET_STRING);
+        // Length
+        bb_setUInt8(data, 0x0E);
+        if ((ret = apdu_getInitiateRequest(settings, data)) != 0)
+        {
+            return ret;
+        }
+    }
+#ifndef DLMS_IGNORE_HIGH_GMAC
+    else
+    {
+        gxByteBuffer crypted;
+#ifndef DLMS_IGNORE_MALLOC
+        BYTE_BUFFER_INIT(&crypted);
+#else
+        unsigned char tmp[25 + 12];
+        bb_attach(&crypted, tmp, 0, sizeof(tmp));
+#endif //DLMS_IGNORE_MALLOC
+
+        if ((ret = apdu_getInitiateRequest(settings, &crypted)) != 0)
+        {
+            return ret;
+        }
+#ifndef DLMS_IGNORE_MALLOC
+        // ret = cip_encrypt(
+        //     &settings->cipher,
+        //     settings->cipher.security,
+        //     DLMS_COUNT_TYPE_PACKET,
+        //     settings->cipher.invocationCounter,
+        //     DLMS_COMMAND_GLO_INITIATE_REQUEST,
+        //     settings->cipher.systemTitle.data,
+        //     &settings->cipher.blockCipherKey,
+        //     &crypted);
+#else
+        ret = cip_encrypt(
+            &settings->cipher,
+            settings->cipher.security,
+            DLMS_COUNT_TYPE_PACKET,
+            settings->cipher.invocationCounter,
+            DLMS_COMMAND_GLO_INITIATE_REQUEST,
+            settings->cipher.systemTitle,
+            settings->cipher.blockCipherKey,
+            &crypted);
+#endif //DLMS_IGNORE_MALLOC
+        if (ret == 0)
+        {
+            // Length for AARQ user field
+            if ((ret = bb_setUInt8(data, (unsigned char)(2 + crypted.size))) != 0 ||
+                // Coding the choice for user-information (Octet string, universal)
+                (ret = bb_setUInt8(data, BER_TYPE_OCTET_STRING)) != 0 ||
+                (ret = bb_setUInt8(data, (unsigned char)crypted.size)) != 0 ||
+                (ret = bb_set2(data, &crypted, 0, crypted.size)) != 0)
+            {
+                //Error code is returned at the end of the function.
+            }
+        }
+#ifndef DLMS_IGNORE_MALLOC
+        bb_clear(&crypted);
+#endif //DLMS_IGNORE_MALLOC
+    }
+#endif //DLMS_IGNORE_HIGH_GMAC
+    return ret;
+}
+
+int apdu_getInitiateRequest(
+    dlmsSettings* settings,
+    gxByteBuffer* data)
+{
+    int ret;
+    // Tag for xDLMS-Initiate request
+    bb_setUInt8(data, DLMS_COMMAND_INITIATE_REQUEST);
+    // Usage field for the response allowed component.
+
+#ifdef DLMS_IGNORE_HIGH_GMAC
+    bb_setUInt8(data, 0);
+#else
+    // Usage field for dedicated-key component.
+    if (settings->cipher.security == DLMS_SECURITY_NONE || !useDedicatedKey(settings))
+    {
+        bb_setUInt8(data, 0);
+    }
+    else
+    {
+        bb_setUInt8(data, 1);
+#ifndef DLMS_IGNORE_MALLOC
+        hlp_setObjectCount(settings->cipher.dedicatedKey->size, data);
+        bb_set(data, settings->cipher.dedicatedKey->data, settings->cipher.dedicatedKey->size);
+#else
+        hlp_setObjectCount(settings->cipher.suite == DLMS_SECURITY_SUITE_V2 ? 32 : 16, data);
+        bb_set(data, settings->cipher.dedicatedKey, settings->cipher.suite == DLMS_SECURITY_SUITE_V2 ? 32 : 16);
+#endif //DLMS_IGNORE_MALLOC
+    }
+#endif //DLMS_IGNORE_HIGH_GMAC
+
+    // encoding of the response-allowed component (bool DEFAULT TRUE)
+    // usage flag (FALSE, default value TRUE conveyed)
+    bb_setUInt8(data, 0);
+
+    // Usage field of the proposed-quality-of-service component.
+    if (settings->qualityOfService == 0)
+    {
+        // Not used
+        bb_setUInt8(data, 0x00);
+    }
+    else
+    {
+        bb_setUInt8(data, 0x01);
+        bb_setUInt8(data, settings->qualityOfService);
+    }
+    if ((ret = bb_setUInt8(data, settings->dlmsVersionNumber)) != 0 ||
+        // Tag for conformance block
+        (ret = bb_setUInt8(data, 0x5F)) != 0 ||
+        (ret = bb_setUInt8(data, 0x1F)) != 0 ||
+        (ret = bb_setUInt8(data, DLMS_DATA_TYPE_BIT_STRING)) != 0 ||
+        // encoding the number of unused bits in the bit string
+        (ret = bb_setUInt8(data, 0x00)) != 0 ||
+        (ret = bb_setUInt8(data, hlp_swapBits((unsigned char)settings->proposedConformance))) != 0 ||
+        (ret = bb_setUInt8(data, hlp_swapBits((unsigned char)(settings->proposedConformance >> 8)))) != 0 ||
+        (ret = bb_setUInt8(data, hlp_swapBits((unsigned char)(settings->proposedConformance >> 16)))) != 0 ||
+        (ret = bb_setUInt16(data, settings->maxPduSize)) != 0)
+    {
+        return ret;
     }
     return 0;
 }

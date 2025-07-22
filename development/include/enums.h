@@ -118,6 +118,7 @@ typedef enum tagDLMS_OBJECT_TYPE
 typedef enum
     {
         DLMS_DATA_TYPE_NONE = 0,
+        DLMS_DATA_TYPE_BIT_STRING = 4,
         DLMS_DATA_TYPE_OCTET_STRING = 9,
         DLMS_DATA_TYPE_STRING = 10,
         DLMS_DATA_TYPE_INT8 = 15,
@@ -173,6 +174,7 @@ typedef enum
         DLMS_COMMAND_SNRM = 0x93,
         DLMS_COMMAND_ACCESS_REQUEST = 0xD9,
         DLMS_COMMAND_GLO_GET_REQUEST = 0xC8,
+        DLMS_COMMAND_GLO_INITIATE_REQUEST = 0x21,
         DLMS_COMMAND_GLO_SET_REQUEST = 0xC9,
         DLMS_COMMAND_DATA_NOTIFICATION = 0x0F,
         DLMS_COMMAND_EVENT_NOTIFICATION = 0xC2,
@@ -292,7 +294,15 @@ typedef enum
         // /*
         // * Association-information OPTIONAL
         // */
-        // PDU_TYPE_USER_INFORMATION = 30
+        PDU_TYPE_USER_INFORMATION = 30
     } PDU_TYPE;
+
+    typedef enum
+    {
+        DLMS_COUNT_TYPE_TAG = 0x1,
+        DLMS_COUNT_TYPE_DATA = 2,
+        DLMS_COUNT_TYPE_PACKET = 3
+    } DLMS_COUNT_TYPE;
+
 
 #endif
