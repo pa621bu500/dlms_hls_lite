@@ -27,6 +27,9 @@ int cl_aarqRequest(
 int cl_parseAAREResponse(
     dlmsSettings *settings,
     gxByteBuffer *data);
-
+    
+int cl_parseApplicationAssociationResponse(
+        dlmsSettings* settings,
+        gxByteBuffer* reply);
 
 #endif

@@ -18,7 +18,7 @@
     } variantArray;
  typedef struct tagdlmsVARIANT
     {
-        // DLMS_DATA_TYPE vt;
+        DLMS_DATA_TYPE vt;
         union
         {
             gxByteBuffer* byteArr;

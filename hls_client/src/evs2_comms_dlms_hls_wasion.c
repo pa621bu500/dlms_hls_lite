@@ -301,7 +301,9 @@ int readSerialPort(
     //-------------
     if (ret == 0 && readObjects != NULL)
     {
-         if ((ret = com_updateInvocationCounter(connection, invocationCounter)) == 0)
+         if ((ret = com_updateInvocationCounter(connection, invocationCounter)) == 0 
+        && (ret = com_initializeConnection(connection)) == 0
+        )
         {
            
         }

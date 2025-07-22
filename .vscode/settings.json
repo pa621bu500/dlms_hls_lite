@@ -12,6 +12,7 @@
         "helpers.h": "c",
         "client.h": "c",
         "connection.h": "c",
-        "cosem.h": "c"
+        "cosem.h": "c",
+        "dlms.h": "c"
     }
 }

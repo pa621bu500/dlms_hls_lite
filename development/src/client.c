@@ -1,7 +1,7 @@
 
 #include "../include/client.h"
 
-
+#include "../include/gxdefine.h"
 #include "../include/dlms.h"
 #include "../include/cosem.h"
 #include "../include/gxmem.h"
@@ -258,4 +258,250 @@ int cl_parseAAREResponse(dlmsSettings* settings, gxByteBuffer* reply)
         return DLMS_ERROR_CODE_INVALID_VERSION_NUMBER;
     }
     return 0;
+}
+
+int cl_methodLN(
+    dlmsSettings* settings,
+    const unsigned char* name,
+    DLMS_OBJECT_TYPE objectType,
+    unsigned char index,
+    dlmsVARIANT* value,
+    message* messages)
+{
+    int ret = 0;
+    gxLNParameters p;
+    gxByteBuffer* pdu;
+    gxByteBuffer data;
+    if (index < 1)
+    {
+        //Invalid parameter
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+#ifdef DLMS_IGNORE_MALLOC
+    if (settings->serializedPdu == NULL)
+    {
+        //Invalid parameter
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    pdu = settings->serializedPdu;
+    //Use same buffer for header and data. Header size is 10 bytes.
+    BYTE_BUFFER_INIT(&data);
+    bb_clear(pdu);
+#else
+    gxByteBuffer bb;
+    unsigned char GX_METHOD_PDU[10];
+    bb_attach(&bb, GX_METHOD_PDU, 0, sizeof(GX_METHOD_PDU));
+    pdu = &bb;
+    BYTE_BUFFER_INIT(&data);
+#endif //DLMS_IGNORE_MALLOC
+    resetBlockIndex(settings);
+    // CI
+    if ((ret = bb_setUInt16(pdu, objectType)) == 0 &&
+        // Add LN
+        (ret = bb_set(pdu, name, 6)) == 0 &&
+        // Attribute ID.
+        (ret = bb_setUInt8(pdu, index)) == 0 &&
+        // Is Method Invocation Parameters used.
+        (ret = bb_setUInt8(pdu, value == NULL || value->vt == DLMS_DATA_TYPE_NONE ? 0 : 1)) == 0)
+    {
+#ifdef DLMS_IGNORE_MALLOC
+        if (value != NULL && value->vt != DLMS_DATA_TYPE_NONE)
+        {
+            if (value->vt == DLMS_DATA_TYPE_OCTET_STRING)
+            {
+                ret = bb_set(pdu, value->byteArr->data, value->byteArr->size);
+            }
+            else
+            {
+                ret = dlms_setData(pdu, value->vt, value);
+            }
+        }
+#else
+        if (value != NULL && value->vt != DLMS_DATA_TYPE_NONE)
+        {
+            if (value->vt == DLMS_DATA_TYPE_OCTET_STRING)
+            {
+                //Space is allocated for type and size
+                ret = bb_capacity(&data, 5 + bb_size(value->byteArr));
+            }
+            if (ret == 0)
+            {
+                ret = dlms_setData(&data, value->vt, value);
+            }
+
+        }
+#endif //DLMS_IGNORE_MALLOC
+    }
+    if (ret == 0)
+    {
+        params_initLN(&p, settings, 0,
+            DLMS_COMMAND_METHOD_REQUEST, DLMS_ACTION_COMMAND_TYPE_NORMAL,
+            pdu, &data, 0xff, DLMS_COMMAND_NONE, 0, 0);
+        ret = dlms_getLnMessages(&p, messages);
+    }
+    bb_clear(&data);
+    bb_clear(pdu);
+    return ret;
+}
+
+int cl_getApplicationAssociationRequest(
+    dlmsSettings* settings,
+    message* messages)
+{
+    int ret;
+    gxByteBuffer challenge;
+    gxByteBuffer* pw;
+    dlmsVARIANT data;
+#if !defined(DLMS_IGNORE_HIGH_GMAC) || !defined(DLMS_IGNORE_HIGH_SHA256)
+    gxByteBuffer pw2;
+    BYTE_BUFFER_INIT(&pw2);
+#endif //DLMS_IGNORE_HIGH_GMAC
+#ifndef GX_DLMS_MICROCONTROLLER
+    unsigned char APPLICATION_ASSOCIATION_REQUEST[64];
+#else
+    static unsigned char APPLICATION_ASSOCIATION_REQUEST[64];
+#endif //DLMS_IGNORE_HIGH_GMAC
+    bb_attach(&challenge, APPLICATION_ASSOCIATION_REQUEST, 0, sizeof(APPLICATION_ASSOCIATION_REQUEST));
+    if (
+#ifndef DLMS_IGNORE_HIGH_GMAC
+        settings->authentication != DLMS_AUTHENTICATION_HIGH_GMAC &&
+#endif // DLMS_IGNORE_HIGH_GMAC
+        settings->password.size == 0)
+    {
+        //Password is invalid.
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    resetBlockIndex(settings);
+    #ifndef DLMS_IGNORE_HIGH_GMAC
+    if (settings->authentication == DLMS_AUTHENTICATION_HIGH_GMAC)
+    {
+        #ifndef DLMS_IGNORE_MALLOC
+                pw = &settings->cipher.systemTitle;
+        #else
+                bb_attach(&pw2, settings->cipher.systemTitle, 8, 8);
+                pw = &pw2;
+        #endif //DLMS_IGNORE_MALLOC
+    }
+        #endif //DLMS_IGNORE_HIGH_GMAC
+    else
+    {
+        pw = &settings->password;
+    }
+    ret = dlms_secure(settings,
+    #ifndef DLMS_IGNORE_HIGH_GMAC
+    settings->cipher.invocationCounter,
+    #else
+        0,
+    #endif //DLMS_IGNORE_HIGH_GMAC
+        & settings->stoCChallenge,
+        pw,
+        &challenge);
+#if !defined(DLMS_IGNORE_HIGH_GMAC) || !defined(DLMS_IGNORE_HIGH_SHA256)
+    bb_clear(&pw2);
+#endif //!defined(DLMS_IGNORE_HIGH_GMAC) || !defined(DLMS_IGNORE_HIGH_SHA256)
+    if (ret == 0)
+    {
+        var_init(&data);
+        data.vt = DLMS_DATA_TYPE_OCTET_STRING;
+        data.byteArr = &challenge;
+        {
+            if (settings->useLogicalNameReferencing)
+            {
+                static const unsigned char LN[6] = { 0, 0, 40, 0, 0, 255 };
+                ret = cl_methodLN(settings, LN, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME,
+                    1, &data, messages);
+            }
+        }
+#ifndef DLMS_IGNORE_MALLOC
+        var_clear(&data);
+        bb_clear(&challenge);
+#endif //DLMS_IGNORE_MALLOC
+    }
+    return ret;
+}
+
+int cl_parseApplicationAssociationResponse(
+    dlmsSettings* settings,
+    gxByteBuffer* reply)
+{
+    unsigned char empty, equals = 0;
+    gxByteBuffer* secret;
+    gxByteBuffer challenge;
+#ifndef DLMS_IGNORE_HIGH_GMAC
+    gxByteBuffer bb2;
+#endif //DLMS_IGNORE_HIGH_GMAC
+    int ret;
+    uint32_t ic = 0;
+    gxByteBuffer value;
+    static unsigned char tmp[MAX_CHALLENGE_SIZE];
+    static unsigned char CHALLENGE_BUFF[MAX_CHALLENGE_SIZE];
+    bb_attach(&value, tmp, 0, sizeof(tmp));
+    bb_attach(&challenge, CHALLENGE_BUFF, 0, sizeof(CHALLENGE_BUFF));
+    // if ((ret = cosem_getOctetString(reply, &value)) != 0)
+    // {
+    //     settings->connected &= ~DLMS_CONNECTION_STATE_DLMS;
+    //     //ParseApplicationAssociationResponse failed. Server to Client do not match.
+    //     return DLMS_ERROR_CODE_AUTHENTICATION_FAILURE;
+    // }
+    empty = value.size == 0;
+    if (!empty)
+    {
+        if (settings->authentication == DLMS_AUTHENTICATION_HIGH_GMAC)
+        {
+            unsigned char ch;
+            bb_attach(&bb2, settings->sourceSystemTitle, sizeof(settings->sourceSystemTitle), sizeof(settings->sourceSystemTitle));
+            secret = &bb2;
+            if ((ret = bb_set(&challenge, value.data, value.size)) != 0 ||
+                (ret = bb_getUInt8(&challenge, &ch)) != 0 ||
+                (ret = bb_getUInt32(&challenge, &ic)) != 0)
+            {
+                return ret;
+            }
+            bb_clear(&challenge);
+        }
+        // if ((ret = dlms_secure(
+        //     settings,
+        //     ic,
+        //     &settings->ctoSChallenge,
+        //     secret,
+        //     &challenge)) != 0)
+        // {
+        //     return ret;
+        // }
+        equals = bb_compare(
+            &challenge,
+            value.data,
+            value.size);
+    }
+    else
+    {
+        // Server did not accept CtoS.
+    }
+    if (!equals)
+    {
+        settings->connected &= ~DLMS_CONNECTION_STATE_DLMS;
+        //ParseApplicationAssociationResponse failed. Server to Client do not match.
+        return DLMS_ERROR_CODE_AUTHENTICATION_FAILURE;
+    }
+    settings->connected |= DLMS_CONNECTION_STATE_DLMS;
+    return 0;
+}
+
+int cl_getObjectsRequest(dlmsSettings* settings, message* messages)
+{
+    int ret;
+    if (settings->useLogicalNameReferencing)
+    {
+        static const unsigned char ln[] = { 0, 0, 40, 0, 0, 0xFF };
+        ret = cl_readLN(settings, ln, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, 2, NULL, messages);
+    }
+    else
+    {
+#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+        ret = cl_readSN(settings, 0xFA00, 2, NULL, messages);
+#else
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+    }
+    return ret;
 }
