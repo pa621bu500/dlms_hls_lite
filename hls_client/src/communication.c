@@ -563,6 +563,56 @@ int com_initializeConnection(
     return DLMS_ERROR_CODE_OK;
 }
 
+
+int com_loadHardcodedObjects(connection *connection)
+{
+    // Clear old objects from settings
+    oa_clear(&connection->settings.objects, 1);
+
+    // --- GXDLMSData: 0.0.96.1.0.255 (Serial Number) ---
+    // initialize a new GxData object
+    gxData *serialNumber = (gxData *)malloc(sizeof(gxData));
+    if (serialNumber == NULL)
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    // clears (zeros out) the memory that was allocated for the gxData struct.
+    memset(serialNumber, 0, sizeof(gxData));
+    // Set the DLMS object type to DATA
+    serialNumber->base.objectType = DLMS_OBJECT_TYPE_DATA;
+    /*
+        converts a string-form OBIS code (like "0.0.96.1.0.255") into a 6-byte logical name
+        ln[0] = 0;
+        ln[1] = 0;
+        ln[2] = 96;
+        ln[3] = 1;
+        ln[4] = 0;
+        ln[5] = 255;
+     */
+    hlp_setLogicalName(serialNumber->base.logicalName, "0.0.96.1.0.255");
+    // add object to the settings.objects array
+    oa_push(&connection->settings.objects, (gxObject *)serialNumber);
+
+    // --- GXDLMSRegister: 1.0.1.8.0.255 (kWh) ---
+    gxRegister *totalEnergy = (gxRegister *)malloc(sizeof(gxRegister));
+    if (totalEnergy == NULL)
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    memset(totalEnergy, 0, sizeof(gxRegister));
+    totalEnergy->base.objectType = DLMS_OBJECT_TYPE_REGISTER;
+    hlp_setLogicalName(totalEnergy->base.logicalName, "1.0.1.8.0.255");
+    oa_push(&connection->settings.objects, (gxObject *)totalEnergy);
+
+    // --- GXDLMSDisconnectControl: 0.0.96.3.10.255 (Relay Status) ---
+    gxDisconnectControl *relay = (gxDisconnectControl *)malloc(sizeof(gxDisconnectControl));
+    if (relay == NULL)
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    memset(relay, 0, sizeof(gxDisconnectControl));
+    relay->base.objectType = DLMS_OBJECT_TYPE_DISCONNECT_CONTROL;
+    hlp_setLogicalName(relay->base.logicalName, "0.0.96.3.10.255");
+    oa_push(&connection->settings.objects, (gxObject *)relay);
+
+    return DLMS_ERROR_CODE_OK;
+}
+
+
 int com_initializeOpticalHead(
     connection *connection)
 {

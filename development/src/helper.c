@@ -159,3 +159,62 @@ int hlp_getObjectCount2(gxByteBuffer* buff, uint16_t* count)
     }
     return ret;
 }
+
+
+int hlp_getLogicalNameToString(const unsigned char value[6], char* ln)
+{
+    int ret;
+#if defined(_WIN32) || defined(_WIN64)
+#if _MSC_VER > 1000
+    ret = sprintf_s(ln, 25, "%d.%d.%d.%d.%d.%d", value[0], value[1], value[2], value[3], value[4], value[5]);
+#else
+    ret = sprintf(ln, "%d.%d.%d.%d.%d.%d", value[0], value[1], value[2], value[3], value[4], value[5]);
+#endif  
+    if (ret != -1)
+    {
+        ret = 0;
+    }
+#else
+    ret = hlp_intToString(ln, 25, value[0], 0, 1);
+    if (ret != -1)
+    {
+        ln += ret;
+        *ln = '.';
+        ++ln;
+        ret = hlp_intToString(ln, 25, value[1], 0, 1);
+        if (ret != -1)
+        {
+            ln += ret;
+            *ln = '.';
+            ++ln;
+            ret = hlp_intToString(ln, 25, value[2], 0, 1);
+            if (ret != -1)
+            {
+                ln += ret;
+                *ln = '.';
+                ++ln;
+                ret = hlp_intToString(ln, 25, value[3], 0, 1);
+                if (ret != -1)
+                {
+                    ln += ret;
+                    *ln = '.';
+                    ++ln;
+                    ret = hlp_intToString(ln, 25, value[4], 0, 1);
+                    if (ret != -1)
+                    {
+                        ln += ret;
+                        *ln = '.';
+                        ++ln;
+                        ret = hlp_intToString(ln, 25, value[5], 0, 1);
+                    }
+                }
+            }
+        }
+    }
+    if (ret != -1)
+    {
+        ret = 0;
+    }
+#endif //WIN32
+    return ret;
+}

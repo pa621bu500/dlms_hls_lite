@@ -302,9 +302,57 @@ int readSerialPort(
     if (ret == 0 && readObjects != NULL)
     {
          if ((ret = com_updateInvocationCounter(connection, invocationCounter)) == 0 
-        && (ret = com_initializeConnection(connection)) == 0
+        && (ret = com_initializeConnection(connection)) == 0 
+        &&  (ret = com_loadHardcodedObjects(connection)) == 0
         )
         {
+             int index;
+            unsigned char buff[200];
+            gxObject *obj = NULL;
+            char *p2, *p = obisCopy;
+            //-------original code-----------
+            // char *p2, *p = readObjects;
+            do
+            {
+                if (p != obisCopy)
+                //-------original code-----------
+                // if (p != readObjects)
+                {
+                    ++p;
+                }
+
+                p2 = strchr(p, ':');
+                *p2 = '\0';
+                ++p2;
+                #if defined(_WIN32) || defined(_WIN64) // Windows
+                                // EVS2 NOT SUPPORTED
+                #else
+                    sscanf(p2, "%d", &index);
+                #endif
+                    hlp_setLogicalName(buff, p);
+                    oa_findByLN(&connection->settings.objects, DLMS_OBJECT_TYPE_NONE, buff, &obj);
+                if (obj == NULL)
+                {
+                    printf("Object '%s' not found from the association view.\n", p);
+                    break;
+                }
+                // Capture objects are read first if the buffer of the profile generic is read.
+                // if (obj->objectType == DLMS_OBJECT_TYPE_PROFILE_GENERIC && index == 2)
+                // {
+                //     if ((ret = com_readValue(connection, obj, 3)) != 0)
+                //     {
+                //         break;
+                //     }
+                // }
+                if(comm_item==GET_METER_SN || comm_item==GET_RELAY_STATUS || comm_item==POLL_ITEM_TOTAL_ACTIVE_ENERGY){
+                    ret = com_readValue_new(connection, obj, index, comm_item,poll_result);
+                }else if(comm_item==SET_RELAY_OFF){
+                    ret = relay_off(connection);
+                }else if(comm_item==SET_RELAY_ON){
+                    ret = relay_on(connection);
+                }
+                // ret = com_readValue(connection, obj, index);
+            } while ((p = strchr(p2, ',')) != NULL);
            
         }
     }else{

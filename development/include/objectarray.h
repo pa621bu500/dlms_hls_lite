@@ -77,12 +77,12 @@
 //         gxObject** object);
 // #endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
 
-//     //Find object using Logical Name.
-//     int oa_findByLN(
-//         objectArray* objects,
-//         DLMS_OBJECT_TYPE type,
-//         const unsigned char* ln,
-//         gxObject** object);
+    //Find object using Logical Name.
+    int oa_findByLN(
+        objectArray* objects,
+        DLMS_OBJECT_TYPE type,
+        const unsigned char* ln,
+        gxObject** object);
 
 //     //Get object by object type.
 //     int oa_getObjects(
