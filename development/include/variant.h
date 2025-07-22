@@ -38,5 +38,11 @@ dlmsVARIANT* data);
 int var_clear(
 dlmsVARIANT* data);
 
+int var_changeType(
+dlmsVARIANT* value,
+DLMS_DATA_TYPE newType);
+
+int var_toInteger(
+    dlmsVARIANT* data);
 
 #endif

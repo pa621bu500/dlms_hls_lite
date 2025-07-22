@@ -10,6 +10,7 @@
 #include "../include/errorcodes.h"
 #include "../include/bytebuffer.h"
 #include "../include/parameters.h"
+#include "../include/gxvalueeventargs.h"
 
 int cl_snrmRequest(dlmsSettings* settings, message* messages)
 {
@@ -313,7 +314,7 @@ int cl_methodLN(
             }
             else
             {
-                ret = dlms_setData(pdu, value->vt, value);
+                // ret = dlms_setData(pdu, value->vt, value);
             }
         }
 #else
@@ -326,7 +327,7 @@ int cl_methodLN(
             }
             if (ret == 0)
             {
-                ret = dlms_setData(&data, value->vt, value);
+                // ret = dlms_setData(&data, value->vt, value);
             }
 
         }
@@ -387,15 +388,15 @@ int cl_getApplicationAssociationRequest(
     {
         pw = &settings->password;
     }
-    ret = dlms_secure(settings,
-    #ifndef DLMS_IGNORE_HIGH_GMAC
-    settings->cipher.invocationCounter,
-    #else
-        0,
-    #endif //DLMS_IGNORE_HIGH_GMAC
-        & settings->stoCChallenge,
-        pw,
-        &challenge);
+    // ret = dlms_secure(settings,
+    // #ifndef DLMS_IGNORE_HIGH_GMAC
+    // settings->cipher.invocationCounter,
+    // #else
+    //     0,
+    // #endif //DLMS_IGNORE_HIGH_GMAC
+    //     & settings->stoCChallenge,
+    //     pw,
+    //     &challenge);
 #if !defined(DLMS_IGNORE_HIGH_GMAC) || !defined(DLMS_IGNORE_HIGH_SHA256)
     bb_clear(&pw2);
 #endif //!defined(DLMS_IGNORE_HIGH_GMAC) || !defined(DLMS_IGNORE_HIGH_SHA256)
@@ -413,7 +414,7 @@ int cl_getApplicationAssociationRequest(
             }
         }
 #ifndef DLMS_IGNORE_MALLOC
-        var_clear(&data);
+        // var_clear(&data);
         bb_clear(&challenge);
 #endif //DLMS_IGNORE_MALLOC
     }
@@ -495,13 +496,103 @@ int cl_getObjectsRequest(dlmsSettings* settings, message* messages)
         static const unsigned char ln[] = { 0, 0, 40, 0, 0, 0xFF };
         ret = cl_readLN(settings, ln, DLMS_OBJECT_TYPE_ASSOCIATION_LOGICAL_NAME, 2, NULL, messages);
     }
-    else
+    return ret;
+}
+
+
+int cl_readLN(
+    dlmsSettings* settings,
+    const unsigned char* name,
+    DLMS_OBJECT_TYPE objectType,
+    unsigned char attributeOrdinal,
+    gxByteBuffer* data,
+    message* messages)
+{
+    int ret;
+    gxLNParameters p;
+    gxByteBuffer* pdu;
+    if ((attributeOrdinal < 1))
     {
-#ifndef DLMS_IGNORE_ASSOCIATION_SHORT_NAME
-        ret = cl_readSN(settings, 0xFA00, 2, NULL, messages);
+        //Invalid parameter
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+#ifdef DLMS_IGNORE_MALLOC
+    if (settings->serializedPdu == NULL)
+    {
+        //Invalid parameter
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    pdu = settings->serializedPdu;
+    bb_clear(pdu);
 #else
+    gxByteBuffer attributeDescriptor;
+    BYTE_BUFFER_INIT(&attributeDescriptor);
+    pdu = &attributeDescriptor;
+#endif //DLMS_IGNORE_MALLOC
+    resetBlockIndex(settings);
+    // CI
+    if ((ret = bb_setUInt16(pdu, objectType)) == 0 &&
+        // Add LN
+        (ret = bb_set(pdu, name, 6)) == 0 &&
+        // Attribute ID.
+        (ret = bb_setUInt8(pdu, attributeOrdinal)) == 0)
+    {
+        if (data == NULL || data->size == 0)
+        {
+            // Access selection is not used.
+            ret = bb_setUInt8(pdu, 0);
+        }
+        else
+        {
+            // Access selection is used.
+            if ((ret = bb_setUInt8(pdu, 1)) == 0)
+            {
+                // Add data.
+                ret = bb_set2(pdu, data, 0, data->size);
+            }
+        }
+    }
+    if (ret == 0)
+    {
+        params_initLN(&p, settings, 0,
+            DLMS_COMMAND_GET_REQUEST, DLMS_GET_COMMAND_TYPE_NORMAL,
+            pdu, data, 0xFF, DLMS_COMMAND_NONE, 0, 0);
+        ret = dlms_getLnMessages(&p, messages);
+    }
+    bb_clear(pdu);
+    return ret;
+}
+// int cl_updateValue(
+//     dlmsSettings* settings,
+//     gxObject* target,
+//     unsigned char attributeIndex,
+//     dlmsVARIANT* value)
+// {
+//     gxValueEventArg e;
+//     if (target == NULL)
+//     {
+//         return DLMS_ERROR_CODE_INVALID_PARAMETER;
+//     }
+//     e.target = target;
+//     e.index = attributeIndex;
+//     e.value = *value;
+//     return cosem_setValue(settings, &e);
+// }
+
+int cl_read(
+    dlmsSettings* settings,
+    gxObject* object,
+    unsigned char attributeOrdinal,
+    message* messages)
+{
+    int ret;
+    if (object == NULL)
+    {
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-#endif //DLMS_IGNORE_ASSOCIATION_SHORT_NAME
+    }
+    else if (settings->useLogicalNameReferencing)
+    {
+        ret = cl_readLN(settings, object->logicalName, object->objectType, attributeOrdinal, NULL, messages);
     }
     return ret;
 }

@@ -400,6 +400,32 @@ int bb_capacity(
     return DLMS_ERROR_CODE_OK;
 }
 
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+unsigned char bb_compare(
+    gxByteBuffer* bb,
+    unsigned char* buff,
+    uint32_t length)
+#else
+unsigned char bb_compare(
+    gxByteBuffer* bb,
+    unsigned char* buff,
+    uint16_t length)
+#endif
+
+{
+    unsigned char equal;
+    if (bb_available(bb) != length)
+    {
+        return 0;
+    }
+    equal = memcmp(bb->data + bb->position, buff, length) == 0;
+    if (equal)
+    {
+        bb->position += length;
+    }
+    return equal;
+}
+
 uint32_t bb_getCapacity(gxByteBuffer *arr)
 {
 

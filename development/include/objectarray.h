@@ -33,9 +33,9 @@
 
 // #ifndef DLMS_IGNORE_MALLOC
 //     //Push new data to the variantArray.
-//     int oa_push(
-//         objectArray * arr,
-//         gxObject* item);
+    int oa_push(
+        objectArray * arr,
+        gxObject* item);
 // #endif //DLMS_IGNORE_MALLOC
 
 //     //Copy content of object array.
@@ -55,9 +55,9 @@
 //         uint16_t count);
 
 //     //Clear object array. Clear will free objects as well.
-//     void oa_clear(
-//         objectArray* arr,
-//         unsigned char releaseObjects);
+    void oa_clear(
+        objectArray* arr,
+        unsigned char releaseObjects);
 
 //     //Empty object array. Empty do not free objects.
 //     void oa_empty(

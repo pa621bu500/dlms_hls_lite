@@ -132,6 +132,55 @@ int hlp_setObjectCount(uint32_t count, gxByteBuffer* buff)
     return ret;
 }
 
+int hlp_setLogicalName(unsigned char ln[6], const char* name)
+{
+    char* ch;
+    char* pOriginalBuff;
+    char* pBuff;
+    int val = 0, count = 0, size = (int)strlen(name);
+    if (size < 11)
+    {
+        return -1;
+    }
+    pBuff = (char*)gxmalloc(size + 1);
+    pOriginalBuff = pBuff;
+    memcpy(pBuff, name, size);
+    pBuff[size] = 0;
+    //AVR compiler can't handle this if casting to char* is removed.
+    while ((ch = (char*)strchr(pBuff, '.')) != NULL)
+    {
+        *ch = '\0';
+        val = hlp_stringToInt(pBuff);
+        if (val == -1)
+        {
+            gxfree(pOriginalBuff);
+            return -1;
+        }
+        ln[count] = (unsigned char)val;
+        pBuff = ch + sizeof(char);
+        ++count;
+    }
+    if (count == 5)
+    {
+        val = hlp_stringToInt(pBuff);
+        if (val == -1)
+        {
+            gxfree(pOriginalBuff);
+            return -1;
+        }
+        ln[count] = (unsigned char)val;
+        pBuff = ch + sizeof(char);
+        ++count;
+    }
+    gxfree(pOriginalBuff);
+    if (count != 6)
+    {
+        memset(ln, 0, 6);
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return DLMS_ERROR_CODE_OK;
+}
+
 
 unsigned char hlp_swapBits(unsigned char value)
 {
@@ -142,6 +191,103 @@ unsigned char hlp_swapBits(unsigned char value)
         value = (unsigned char)(value >> 1);
     }
     return ret;
+}
+
+int hlp_intToString(char* str, int bufsize, int32_t value, unsigned char isSigned, unsigned char digits)
+{
+    int cnt = 0;
+    int32_t val = value;
+    if (isSigned && value < 0)
+    {
+        if (bufsize < 1)
+        {
+            return -1;
+        }
+        *str = '-';
+        ++str;
+        --bufsize;
+        value = -value;
+        val = value;
+        ++cnt;
+    }
+    if (digits != 0)
+    {
+        --digits;
+    }
+    //Find length.
+    while ((val = (val / 10)) > 0)
+    {
+        ++str;
+        if (digits != 0)
+        {
+            --digits;
+        }
+    }
+    *(str + digits + 1) = '\0';
+    while (digits != 0)
+    {
+        if (bufsize < 1)
+        {
+            return -1;
+        }
+        *str = '0';
+        --digits;
+        --bufsize;
+        ++str;
+        ++cnt;
+    }
+    do
+    {
+        if (bufsize < 1)
+        {
+            return -1;
+        }
+        *str = (value % 10) + '0';
+        value /= 10;
+        if (value != 0)
+        {
+            --str;
+        }
+        --bufsize;
+        ++cnt;
+    } while (value != 0);
+    return cnt;
+}
+
+
+int32_t hlp_stringToInt2(const char* str, const char* end)
+{
+    if (str == NULL)
+    {
+        return -1;
+    }
+    int32_t value = 0;
+    unsigned char minus = 0;
+    if (*str == '-')
+    {
+        minus = 1;
+        ++str;
+    }
+    while (*str != '\0' && str != end)
+    {
+        if (*str < '0' || *str > '9')
+        {
+            return -1;
+        }
+        value *= 10;
+        value += *str - '0';
+        ++str;
+    }
+    if (minus)
+    {
+        return -value;
+    }
+    return value;
+}
+
+int32_t hlp_stringToInt(const char* str)
+{
+    return hlp_stringToInt2(str, NULL);
 }
 
 int hlp_getObjectCount2(gxByteBuffer* buff, uint16_t* count)

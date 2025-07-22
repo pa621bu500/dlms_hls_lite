@@ -127,6 +127,7 @@ typedef enum
         DLMS_DATA_TYPE_INT16 = 16,
         DLMS_DATA_TYPE_UINT8 = 17,
         DLMS_DATA_TYPE_INT64 = 20,
+        DLMS_OBJECT_TYPE_DISCONNECT_CONTROL = 70,
 
     } DLMS_DATA_TYPE;
 typedef enum
@@ -182,11 +183,20 @@ typedef enum
         DLMS_COMMAND_DATA_NOTIFICATION = 0x0F,
         DLMS_COMMAND_EVENT_NOTIFICATION = 0xC2,
           DLMS_COMMAND_METHOD_REQUEST = 0xC3,
+             DLMS_COMMAND_GET_REQUEST = 0xC0,
         DLMS_COMMAND_UA = 0x73,
         DLMS_COMMAND_DISCONNECT_MODE = 0x1f,
          DLMS_COMMAND_REJECTED = 0x97,
     } DLMS_COMMAND;
 
+        typedef enum
+    {
+        /*
+        * Normal Get.
+        */
+        DLMS_GET_COMMAND_TYPE_NORMAL = 1,
+
+    } DLMS_GET_COMMAND_TYPE;
 
     
 

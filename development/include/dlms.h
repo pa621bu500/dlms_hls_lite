@@ -50,6 +50,11 @@ int dlms_getData2(
     gxReplyData* data,
     unsigned char first);
 
+int dlms_setData(
+gxByteBuffer* data,
+DLMS_DATA_TYPE type,
+dlmsVARIANT* value);
+
 int dlms_getData3(
     dlmsSettings* settings,
     gxByteBuffer* reply,

@@ -19,6 +19,19 @@ typedef struct
 #endif
 } gxByteBuffer;
 
+
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+    unsigned char bb_compare(
+        gxByteBuffer* bb,
+        unsigned char* buff,
+        uint32_t length);
+#else
+    unsigned char bb_compare(
+        gxByteBuffer* bb,
+        unsigned char* buff,
+        uint16_t length);
+#endif
+
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
     int bb_insert(
         const unsigned char* src,

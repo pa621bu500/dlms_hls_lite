@@ -17,6 +17,21 @@ static const unsigned char LLC_SEND_BYTES[3] = { 0xE6, 0xE6, 0x00 };
 static const unsigned char LLC_REPLY_BYTES[3] = { 0xE6, 0xE7, 0x00 };
 static const unsigned char HDLC_FRAME_START_END = 0x7E;
 
+
+// int dlms_setData(gxByteBuffer* buff, DLMS_DATA_TYPE type, dlmsVARIANT* value)
+// {
+// #ifndef DLMS_IGNORE_MALLOC
+//     int ret;
+//     ret = var_changeType(value, type);
+//     if (ret != DLMS_ERROR_CODE_OK)
+//     {
+//         return ret;
+//     }
+// #endif //DLMS_IGNORE_MALLOC
+//     return var_getBytes2(value, type, buff);
+// }
+
+
 int dlms_getHdlcFrame(
     dlmsSettings* settings,
     int frame,

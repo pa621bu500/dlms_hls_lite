@@ -11,6 +11,9 @@ int var_init(dlmsVARIANT* data)
     return DLMS_ERROR_CODE_OK;
 }
 
+
+
+
 // int var_clear(dlmsVARIANT* data)
 // {
 // #ifdef DLMS_IGNORE_MALLOC
@@ -75,15 +78,7 @@ int var_init(dlmsVARIANT* data)
 //             gxfree(data->bitArr);
 //         }
 //         break;
-//     case DLMS_DATA_TYPE_DATETIME:
-//     case DLMS_DATA_TYPE_DATE:
-//     case DLMS_DATA_TYPE_TIME:
-//         if (data->dateTime != NULL)
-//         {
-//             gxfree(data->dateTime);
-//             data->dateTime = NULL;
-//         }
-//         break;
+  
 //     default:
 //         data->llVal = 0;
 //         break;

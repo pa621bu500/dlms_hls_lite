@@ -24,6 +24,28 @@ int cl_aarqRequest(
     dlmsSettings *settings,
     message *messages);
 
+int cl_read(
+dlmsSettings* settings,
+gxObject* object,
+unsigned char attributeOrdinal,
+message* messages);
+
+    int cl_readLN(
+        dlmsSettings* settings,
+        const unsigned char* name,
+        DLMS_OBJECT_TYPE interfaceClass,
+        unsigned char attributeOrdinal,
+        gxByteBuffer* data,
+        message* messages);
+
+
+            int cl_updateValue(
+        dlmsSettings* settings,
+        gxObject* object,
+        unsigned char attributeOrdinal,
+        dlmsVARIANT* value);
+
+
 int cl_parseAAREResponse(
     dlmsSettings *settings,
     gxByteBuffer *data);

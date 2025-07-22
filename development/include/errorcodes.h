@@ -3,8 +3,39 @@
 
 typedef enum
 {
+     DLMS_ERROR_TYPE_EXCEPTION_RESPONSE = 0x80000000,
+    DLMS_ERROR_TYPE_CONFIRMED_SERVICE_ERROR = 0x40000000,
     DLMS_ERROR_TYPE_COMMUNICATION_ERROR = 0x20000000
 }DLMS_ERROR_TYPE;
+
+
+typedef enum
+    {
+        /*
+        * Operation is not possible
+        */
+        // DLMS_EXCEPTION_SERVICE_ERROR_OPERATION_NOT_POSSIBLE = 1,
+        // /*
+        // * Service is not supported.
+        // */
+        // DLMS_EXCEPTION_SERVICE_ERROR_SERVICE_NOT_SUPPORTED = 2,
+        // /*
+        // * Other reason.
+        // */
+        // DLMS_EXCEPTION_SERVICE_ERROR_OTHER_REASON = 3,
+        // /*
+        // * PDU is too long.
+        // */
+        // DLMS_EXCEPTION_SERVICE_ERROR_PDU_TOO_LONG = 4,
+        // /*
+        // * Ciphering failed.
+        // */
+        // DLMS_EXCEPTION_SERVICE_ERROR_DECIPHERING_ERROR = 5,
+        // /*
+        // * Invocation counter is invalid.
+        // */
+        DLMS_EXCEPTION_SERVICE_ERROR_INVOCATION_COUNTER_ERROR = 6
+    } DLMS_EXCEPTION_SERVICE_ERROR;
 
 typedef enum
 {

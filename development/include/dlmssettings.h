@@ -158,8 +158,12 @@ typedef struct
     // gxByteBuffer clientSystemTitle;
 } gxPlcSettings;
 
+
+
+
 typedef struct
 {
+    
     // Is custom challenges used. If custom challenge is used new challenge is
     // not generated if it is Set. This is for debugging purposes.
     unsigned char customChallenges;
@@ -248,6 +252,12 @@ typedef struct
     // Expected client system title.
     unsigned char *expectedClientSystemTitle;
 } dlmsSettings;
+
+typedef struct
+{
+    dlmsSettings base;
+} dlmsServerSettings;
+
 
 void plc_reset(
     dlmsSettings *settings);
