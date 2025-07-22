@@ -369,6 +369,637 @@ int dlms_generateChallenge(
 //     return ret;
 // }
 
+int dlms_getHDLCAddress(
+    gxByteBuffer* buff,
+    uint32_t* address,
+    unsigned char checkClientAddress)
+{
+    unsigned char ch;
+    uint16_t s, pos;
+    uint32_t l;
+    int ret, size = 0;
+    for (pos = (uint16_t)buff->position; pos != (uint16_t)buff->size; ++pos)
+    {
+        ++size;
+        if ((ret = bb_getUInt8ByIndex(buff, pos, &ch)) != 0)
+        {
+            return ret;
+        }
+        if ((ch & 0x1) == 1)
+        {
+            break;
+        }
+    }
+    //DLMS CCT test requires that client size is one byte.
+    if (checkClientAddress && size != 1)
+    {
+        return DLMS_ERROR_CODE_INVALID_CLIENT_ADDRESS;
+    }
+
+    if (size == 1)
+    {
+        if ((ret = bb_getUInt8(buff, &ch)) != 0)
+        {
+            return ret;
+        }
+        *address = ((ch & 0xFE) >> 1);
+    }
+    else if (size == 2)
+    {
+        if ((ret = bb_getUInt16(buff, &s)) != 0)
+        {
+            return ret;
+        }
+        *address = ((s & 0xFE) >> 1) | ((s & 0xFE00) >> 2);
+    }
+    else if (size == 4)
+    {
+        if ((ret = bb_getUInt32(buff, &l)) != 0)
+        {
+            return ret;
+        }
+        *address = ((l & 0xFE) >> 1) | ((l & 0xFE00) >> 2)
+            | ((l & 0xFE0000) >> 3) | ((l & 0xFE000000) >> 4);
+    }
+    else
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return DLMS_ERROR_CODE_OK;
+}
+
+int dlms_checkHdlcAddress(
+    unsigned char server,
+    dlmsSettings* settings,
+    gxByteBuffer* reply,
+    uint16_t index)
+{
+    unsigned char ch;
+    int ret;
+    uint32_t source, target;
+    // Get destination and source addresses.
+    if ((ret = dlms_getHDLCAddress(reply, &target, 0)) != 0)
+    {
+        return ret;
+    }
+    if ((ret = dlms_getHDLCAddress(reply, &source, server)) != 0)
+    {
+        return ret;
+    }
+    if (server)
+    {
+        // Check that server addresses match.
+        // if (settings->serverAddress != 0 && settings->serverAddress != target)
+        // {
+        //     // Get frame command.
+        //     if (bb_getUInt8ByIndex(reply, reply->position, &ch) != 0)
+        //     {
+        //         return DLMS_ERROR_CODE_INVALID_SERVER_ADDRESS;
+        //     }
+        //     return DLMS_ERROR_CODE_INVALID_SERVER_ADDRESS;
+        // }
+        // else
+        // {
+        //     settings->serverAddress = target;
+        // }
+
+        // // Check that client addresses match.
+        // if (settings->clientAddress != 0 && settings->clientAddress != source)
+        // {
+        //     // Get frame command.
+        //     if (bb_getUInt8ByIndex(reply, reply->position, &ch) != 0)
+        //     {
+        //         return DLMS_ERROR_CODE_INVALID_CLIENT_ADDRESS;
+        //     }
+        //     //If SNRM and client has not call disconnect and changes client ID.
+        //     if (ch == DLMS_COMMAND_SNRM)
+        //     {
+        //         settings->clientAddress = (uint16_t)source;
+        //     }
+        //     else
+        //     {
+        //         return DLMS_ERROR_CODE_INVALID_CLIENT_ADDRESS;
+        //     }
+        // }
+        // else
+        // {
+        //     settings->clientAddress = (uint16_t)source;
+        // }
+    }
+    else
+    {
+        // Check that client addresses match.
+        if (settings->clientAddress != target)
+        {
+            // If echo.
+            if (settings->clientAddress == source && settings->serverAddress == target)
+            {
+                reply->position = index + 1;
+            }
+            return DLMS_ERROR_CODE_FALSE;
+        }
+        // Check that server addresses match.
+        if (settings->serverAddress != source &&
+            // If All-station (Broadcast).
+            (settings->serverAddress & 0x7F) != 0x7F && (settings->serverAddress & 0x3FFF) != 0x3FFF)
+        {
+            //Check logical and physical address separately.
+            //This is done because some meters might send four bytes
+            //when only two bytes are needed.
+            uint32_t readLogical, readPhysical, logical, physical;
+            // dlms_getServerAddress(source, &readLogical, &readPhysical);
+            // dlms_getServerAddress(settings->serverAddress, &logical, &physical);
+            if (readLogical != logical || readPhysical != physical)
+            {
+                return DLMS_ERROR_CODE_FALSE;
+            }
+        }
+    }
+    return DLMS_ERROR_CODE_OK;
+}
+
+
+int dlms_getHdlcData(
+    unsigned char server,
+    dlmsSettings* settings,
+    gxByteBuffer* reply,
+    gxReplyData* data,
+    unsigned char* frame,
+    unsigned char preEstablished,
+    unsigned char first)
+{
+    int ret;
+    unsigned char ch;
+    uint16_t eopPos;
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+    uint32_t pos, frameLen = 0;
+    uint32_t packetStartID = reply->position;
+#else
+    uint16_t pos, frameLen = 0;
+    uint16_t packetStartID = (uint16_t)reply->position;
+#endif
+    uint16_t crc, crcRead;
+    // If whole frame is not received yet.
+    if (reply->size - reply->position < 9)
+    {
+        data->complete = 0;
+        return 0;
+    }
+    data->complete = 1;
+    // Find start of HDLC frame.
+    for (pos = (uint16_t)reply->position; pos < reply->size; ++pos)
+    {
+        if ((ret = bb_getUInt8(reply, &ch)) != 0)
+        {
+            return ret;
+        }
+        if (ch == HDLC_FRAME_START_END)
+        {
+            packetStartID = pos;
+            break;
+        }
+    }
+    // Not a HDLC frame.
+    // Sometimes meters can send some strange data between DLMS frames.
+    if (reply->position == reply->size)
+    {
+        data->complete = 0;
+        // Not enough data to parse;
+        return 0;
+    }
+    if ((ret = bb_getUInt8(reply, frame)) != 0)
+    {
+        return ret;
+    }
+    if ((*frame & 0xF0) != 0xA0)
+    {
+        --reply->position;
+        // If same data.
+        return dlms_getHdlcData(server, settings, reply, data, frame, preEstablished, first);
+    }
+    // Check frame length.
+    if ((*frame & 0x7) != 0)
+    {
+        frameLen = ((*frame & 0x7) << 8);
+    }
+    if ((ret = bb_getUInt8(reply, &ch)) != 0)
+    {
+        return ret;
+    }
+    // If not enough data.
+    frameLen += ch;
+    if ((reply->size - reply->position + 1) < frameLen)
+    {
+        data->complete = 0;
+        reply->position = packetStartID;
+        // Not enough data to parse;
+        return 0;
+    }
+    eopPos = (uint16_t)(frameLen + packetStartID + 1);
+    if ((ret = bb_getUInt8ByIndex(reply, eopPos, &ch)) != 0)
+    {
+        return ret;
+    }
+    if (ch != HDLC_FRAME_START_END)
+    {
+        reply->position -= 2;
+        return dlms_getHdlcData(server, settings, reply, data, frame, preEstablished, first);
+    }
+
+    // Check addresses.
+    ret = dlms_checkHdlcAddress(server, settings, reply, eopPos);
+    if (ret != 0)
+    {
+        //If pre-established client address has change.
+        if (ret == DLMS_ERROR_CODE_INVALID_CLIENT_ADDRESS)
+        {
+            return DLMS_ERROR_CODE_INVALID_CLIENT_ADDRESS;
+        }
+        // else
+        // {
+        //     if (ret == DLMS_ERROR_CODE_INVALID_SERVER_ADDRESS &&
+        //         reply->position + 4 == reply->size)
+        //     {
+        //         data->packetLength = 0;
+        //         bb_clear(reply);
+        //         return ret;
+        //     }
+        //     if (ret == DLMS_ERROR_CODE_FALSE)
+        //     {
+        //         // If echo or reply to other meter.
+        //         return dlms_getHdlcData(server, settings, reply, data, frame, preEstablished, first);
+        //     }
+        //     reply->position = packetStartID + 1;
+        //     ret = dlms_getHdlcData(server, settings, reply, data, frame, preEstablished, first);
+        //     return ret;
+        // }
+    }
+    // Is there more data available.
+    unsigned char moreData = (*frame & 0x8) != 0;
+    // Get frame type.
+    if ((ret = bb_getUInt8(reply, frame)) != 0)
+    {
+        return ret;
+    }
+
+    // Is there more data available.
+    if (moreData)
+    {
+        data->moreData |= DLMS_DATA_REQUEST_TYPES_FRAME;
+    }
+    else
+    {
+        data->moreData = ((DLMS_DATA_REQUEST_TYPES)(data->moreData & ~DLMS_DATA_REQUEST_TYPES_FRAME));
+    }
+
+    if (!preEstablished
+#ifndef DLMS_IGNORE_HDLC_CHECK
+        && !checkFrame(settings, *frame)
+#endif //DLMS_IGNORE_HDLC_CHECK
+        )
+    {
+        // reply->position = eopPos + 1;
+        // if (settings->server)
+        // {
+        //     return DLMS_ERROR_CODE_INVALID_FRAME_NUMBER;
+        // }
+        // return dlms_getHdlcData(server, settings, reply, data, frame, preEstablished, first);
+    }
+    // Check that header CRC is correct.
+    crc = countCRC(reply, packetStartID + 1,
+        reply->position - packetStartID - 1);
+
+    if ((ret = bb_getUInt16(reply, &crcRead)) != 0)
+    {
+        return ret;
+    }
+
+    if (crc != crcRead)
+    {
+        if (reply->size - reply->position > 8)
+        {
+            return dlms_getHdlcData(server, settings, reply, data, frame, preEstablished, first);
+        }
+#ifdef DLMS_DEBUG
+        svr_notifyTrace("Invalid CRC. ", -1);
+#endif //DLMS_DEBUG
+        return DLMS_ERROR_CODE_WRONG_CRC;
+    }
+    // Check that packet CRC match only if there is a data part.
+    if (reply->position != packetStartID + frameLen + 1)
+    {
+        crc = countCRC(reply, packetStartID + 1, frameLen - 2);
+        if ((ret = bb_getUInt16ByIndex(reply, packetStartID + frameLen - 1, &crcRead)) != 0)
+        {
+            return ret;
+        }
+        if (crc != crcRead)
+        {
+#ifdef DLMS_DEBUG
+            svr_notifyTrace("Invalid CRC. ", -1);
+#endif //DLMS_DEBUG
+            return DLMS_ERROR_CODE_WRONG_CRC;
+        }
+        // Remove CRC and EOP from packet length.
+        data->packetLength = eopPos - 2;
+    }
+    else
+    {
+        data->packetLength = eopPos - 2;
+    }
+
+
+    if (*frame != 0x13 && *frame != 0x3 && (*frame & HDLC_FRAME_TYPE_U_FRAME) == HDLC_FRAME_TYPE_U_FRAME)
+    {
+        // Get Eop if there is no data.
+        if (reply->position == packetStartID + frameLen + 1)
+        {
+            // Get EOP.
+            if ((ret = bb_getUInt8(reply, &ch)) != 0)
+            {
+                return ret;
+            }
+        }
+        data->command = (DLMS_COMMAND)*frame;
+        switch (data->command)
+        {
+        case DLMS_COMMAND_SNRM:
+        case DLMS_COMMAND_UA:
+        case DLMS_COMMAND_DISCONNECT_MODE:
+        case DLMS_COMMAND_REJECTED:
+        case DLMS_COMMAND_DISC:
+            break;
+        default:
+            //Unknown command.
+            return DLMS_ERROR_CODE_REJECTED;
+        }
+    }
+    // else if (*frame != 0x13 && *frame != 0x3 && (*frame & HDLC_FRAME_TYPE_S_FRAME) == HDLC_FRAME_TYPE_S_FRAME)
+    // {
+    //     // If S-frame
+    //     int tmp = (*frame >> 2) & 0x3;
+    //     // If frame is rejected.
+    //     if (tmp == HDLC_CONTROL_FRAME_REJECT)
+    //     {
+    //         return DLMS_ERROR_CODE_REJECTED;
+    //     }
+    //     else if (tmp == HDLC_CONTROL_FRAME_RECEIVE_NOT_READY)
+    //     {
+    //         return DLMS_ERROR_CODE_REJECTED;
+    //     }
+    //     else if (tmp == HDLC_CONTROL_FRAME_RECEIVE_READY)
+    //     {
+    //     }
+    //     // Get Eop if there is no data.
+    //     if (reply->position == packetStartID + frameLen + 1)
+    //     {
+    //         // Get EOP.
+    //         if ((ret = bb_getUInt8(reply, &ch)) != 0)
+    //         {
+    //             return ret;
+    //         }
+    //     }
+    // }
+    else
+    {
+        // I-frame
+        // Get Eop if there is no data.
+        if (reply->position == packetStartID + frameLen + 1)
+        {
+            // Get EOP.
+            if ((ret = bb_getUInt8(reply, &ch)) != 0)
+            {
+                return ret;
+            }
+            if ((*frame & 0x1) == 0x1)
+            {
+                data->moreData = DLMS_DATA_REQUEST_TYPES_FRAME;
+            }
+        }
+    }
+    if (settings->server && (first || data->command == DLMS_COMMAND_SNRM))
+    {
+        printf("reached dlmssettings gethdlc function");
+    }
+    return DLMS_ERROR_CODE_OK;
+}
+
+unsigned char dlms_useHdlc(DLMS_INTERFACE_TYPE type)
+{
+#ifndef DLMS_IGNORE_HDLC
+    return type == DLMS_INTERFACE_TYPE_HDLC ||
+        type == DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E ||
+        type == DLMS_INTERFACE_TYPE_PLC_HDLC;
+#else
+    return 0;
+#endif //DLMS_IGNORE_HDLC
+}
+
+int dlms_getDataFromFrame(
+    gxByteBuffer* reply,
+    gxReplyData* data,
+    unsigned char hdlc)
+{
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+    uint32_t offset = data->data.size;
+    uint32_t cnt;
+#else
+    uint16_t offset = data->data.size;
+    uint16_t cnt;
+#endif
+    if (data->packetLength < reply->position)
+    {
+        cnt = 0;
+    }
+    else
+    {
+        cnt = data->packetLength - reply->position;
+    }
+    if (cnt != 0)
+    {
+        int ret;
+        if ((ret = bb_capacity(&data->data, offset + cnt)) != 0 ||
+            (ret = bb_set2(&data->data, reply, reply->position, cnt)) != 0)
+        {
+            return ret;
+        }
+        if (hdlc)
+        {
+            reply->position += 3;
+        }
+    }
+    // Set position to begin of new data.
+    data->data.position = offset;
+    return 0;
+}
+
+int dlms_getData3(
+    dlmsSettings* settings,
+    gxByteBuffer* reply,
+    gxReplyData* data,
+    gxReplyData* notify,
+    unsigned char first,
+    unsigned char* isNotify)
+{
+    int ret;
+    unsigned char frame = 0;
+    if (isNotify != NULL)
+    {
+        *isNotify = 0;
+    }
+    switch (settings->interfaceType)
+    {
+#ifndef DLMS_IGNORE_HDLC
+    case DLMS_INTERFACE_TYPE_HDLC:
+    case DLMS_INTERFACE_TYPE_HDLC_WITH_MODE_E:
+        ret = dlms_getHdlcData(settings->server, settings, reply, data, &frame, data->preEstablished, first);
+        break;
+#endif //DLMS_IGNORE_HDLC
+    case DLMS_INTERFACE_TYPE_PDU:
+        data->packetLength = reply->size;
+        data->complete = reply->size != 0;
+        ret = 0;
+        break;
+    default:
+        // Invalid Interface type.
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        break;
+    }
+    if (ret != 0)
+    {
+        return ret;
+    }
+    if (*isNotify && notify != NULL)
+    {
+        if (!notify->complete)
+        {
+            // If all data is not read yet.
+            return 0;
+        }
+        data = notify;
+    }
+    else if (!data->complete)
+    {
+        // If all data is not read yet.
+        return 0;
+    }
+    if (settings->interfaceType != DLMS_INTERFACE_TYPE_PLC_HDLC)
+    {
+        if ((ret = dlms_getDataFromFrame(reply, data, dlms_useHdlc(settings->interfaceType))) != 0)
+        {
+            return ret;
+        }
+    }
+    // If keepalive or get next frame request.
+    if (((frame != 0x13 && frame != 0x3) || data->moreData != DLMS_DATA_REQUEST_TYPES_NONE) && (frame & 0x1) != 0)
+    {
+        if (dlms_useHdlc(settings->interfaceType) && data->data.size != 0)
+        {
+            if (reply->position != reply->size)
+            {
+                reply->position += 3;
+            }
+        }
+        if (data->command == DLMS_COMMAND_REJECTED)
+        {
+            return DLMS_ERROR_CODE_REJECTED;
+        }
+        return DLMS_ERROR_CODE_OK;
+    }
+    return ret;
+}
+
+int dlms_parseSnrmUaResponse(
+    dlmsSettings* settings,
+    gxByteBuffer* data)
+{
+    uint32_t value;
+    unsigned char ch, id, len;
+    uint16_t tmp;
+    int ret;
+    //If default settings are used.
+    if (data->size - data->position == 0)
+    {
+        return 0;
+    }
+    // Skip FromatID
+    if ((ret = bb_getUInt8(data, &ch)) != 0)
+    {
+        return ret;
+    }
+    // Skip Group ID.
+    if ((ret = bb_getUInt8(data, &ch)) != 0)
+    {
+        return ret;
+    }
+    // Skip Group len
+    if ((ret = bb_getUInt8(data, &ch)) != 0)
+    {
+        return ret;
+    }
+    while (data->position < data->size)
+    {
+        if ((ret = bb_getUInt8(data, &id)) != 0 ||
+            (ret = bb_getUInt8(data, &len)) != 0)
+        {
+            return ret;
+        }
+        switch (len)
+        {
+        case 1:
+            ret = bb_getUInt8(data, &ch);
+            value = ch;
+            break;
+        case 2:
+            ret = bb_getUInt16(data, &tmp);
+            value = tmp;
+            break;
+        case 4:
+            ret = bb_getUInt32(data, &value);
+            break;
+        default:
+            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+        if (ret != DLMS_ERROR_CODE_OK)
+        {
+            return ret;
+        }
+        // RX / TX are delivered from the partner's point of view =>
+        // reversed to ours
+        switch (id)
+        {
+        case HDLC_INFO_MAX_INFO_TX:
+            if (value < settings->maxInfoRX)
+            {
+                settings->maxInfoRX = (uint16_t)value;
+            }
+            break;
+        case HDLC_INFO_MAX_INFO_RX:
+            if (value < settings->maxInfoTX)
+            {
+                settings->maxInfoTX = (uint16_t)value;
+            }
+            break;
+        case HDLC_INFO_WINDOW_SIZE_TX:
+            if (value < settings->windowSizeRX)
+            {
+                settings->windowSizeRX = (unsigned char)value;
+            }
+            break;
+        case HDLC_INFO_WINDOW_SIZE_RX:
+            if (value < settings->windowSizeTX)
+            {
+                settings->windowSizeTX = (unsigned char)value;
+            }
+            break;
+        default:
+            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+            break;
+        }
+    }
+    return ret;
+}
+
 int dlms_checkInit(dlmsSettings* settings)
 {
     if (settings->clientAddress == 0)

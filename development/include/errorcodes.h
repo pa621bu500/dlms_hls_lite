@@ -89,7 +89,7 @@ typedef enum
     // // Server addresses do not match
     // DLMS_ERROR_CODE_SERVER_ADDRESS_NO_NOT_MATCH,
     // // CRC do not match.
-    // DLMS_ERROR_CODE_WRONG_CRC,
+    DLMS_ERROR_CODE_WRONG_CRC,
     // // Invalid response
     // DLMS_ERROR_CODE_INVALID_RESPONSE,
     // // Invalid Tag.

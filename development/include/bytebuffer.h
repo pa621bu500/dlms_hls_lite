@@ -37,6 +37,19 @@ int bb_getUInt8(
 gxByteBuffer* bb,
 unsigned char* value);
 
+int bb_getUInt16(
+gxByteBuffer* bb,
+uint16_t* value);
+
+int bb_getUInt32(
+gxByteBuffer* bb,
+uint32_t* value);
+
+int bb_getUInt16ByIndex(
+gxByteBuffer* bb,
+uint32_t index,
+uint16_t* value);
+
 uint32_t bb_size(
 gxByteBuffer* bb);
 

@@ -178,6 +178,9 @@ typedef enum
         DLMS_COMMAND_GLO_SET_REQUEST = 0xC9,
         DLMS_COMMAND_DATA_NOTIFICATION = 0x0F,
         DLMS_COMMAND_EVENT_NOTIFICATION = 0xC2,
+        DLMS_COMMAND_UA = 0x73,
+        DLMS_COMMAND_DISCONNECT_MODE = 0x1f,
+         DLMS_COMMAND_REJECTED = 0x97,
     } DLMS_COMMAND;
 
 
@@ -296,6 +299,13 @@ typedef enum
         // */
         PDU_TYPE_USER_INFORMATION = 30
     } PDU_TYPE;
+
+
+    typedef enum
+    {
+
+        HDLC_FRAME_TYPE_U_FRAME = 0x3
+    } HDLC_FRAME_TYPE;
 
     typedef enum
     {

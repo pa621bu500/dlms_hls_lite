@@ -173,12 +173,12 @@ int dlms_parseSnrmUaResponse(
             value = ch;
             break;
         case 2:
-            // ret = bb_getUInt16(data, &tmp);
-            // value = tmp;
-            // break;
+            ret = bb_getUInt16(data, &tmp);
+            value = tmp;
+            break;
         case 4:
-            // ret = bb_getUInt32(data, &value);
-            // break;
+            ret = bb_getUInt32(data, &value);
+            break;
         default:
             ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
         }
@@ -309,6 +309,16 @@ int cl_aarqRequest(
     settings->connected &= ~DLMS_CONNECTION_STATE_DLMS;
     bb_clear(pdu);
     return ret;
+}
+
+int cl_getData2(
+    dlmsSettings* settings,
+    gxByteBuffer* reply,
+    gxReplyData* data,
+    gxReplyData* notify,
+    unsigned char* isNotify)
+{
+    return dlms_getData3(settings, reply, data, notify, 0, isNotify);
 }
 
 // int cl_parseAAREResponse(dlmsSettings* settings, gxByteBuffer* reply)

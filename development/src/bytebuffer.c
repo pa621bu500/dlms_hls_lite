@@ -86,6 +86,20 @@ int bb_getUInt8(
     return 0;
 }
 
+int bb_getUInt16(
+    gxByteBuffer* arr,
+    uint16_t* value)
+{
+    if (arr->position + 2 > arr->size)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    *value = (uint16_t)(((unsigned char*)arr->data)[arr->position] << 8 |
+        ((unsigned char*)arr->data)[arr->position + 1]);
+    arr->position += 2;
+    return 0;
+}
+
 int bb_setUInt8ByIndex(
     gxByteBuffer *arr,
     uint32_t index,
@@ -101,6 +115,34 @@ int bb_setUInt8ByIndex(
         arr->data[index] = item;
     }
     return ret;
+}
+
+int bb_getUInt16ByIndex(
+    gxByteBuffer* arr,
+    uint32_t index,
+    uint16_t* value)
+{
+    if (index + 2 > arr->size)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    *value = (uint16_t)(((unsigned char*)arr->data)[index] << 8 |
+        ((unsigned char*)arr->data)[index + 1]);
+    return 0;
+}
+
+int bb_getUInt32(
+    gxByteBuffer* arr,
+    uint32_t* value)
+{
+
+    if (arr->position + 4 > arr->size)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    *value = GETU32(arr->data + arr->position);
+    arr->position += 4;
+    return 0;
 }
 
 int bb_setUInt8(

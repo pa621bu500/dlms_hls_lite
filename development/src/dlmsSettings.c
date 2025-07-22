@@ -192,6 +192,115 @@ unsigned char isCiphered(
     return cipher->security != DLMS_SECURITY_NONE;
 }
 
+
+unsigned char checkFrame(
+    dlmsSettings* settings,
+    unsigned char frame)
+{
+    //If notify
+    if (frame == 0x13)
+    {
+        return 1;
+    }
+    // If U frame.
+    if ((frame & 0x3) == 3)
+    {
+        if (frame == 0x93)
+        {
+            printf("reached dlms.checkframe");
+            // unsigned char isEcho = !settings->server && frame == 0x93 &&
+            //     (settings->senderFrame == 0x10 || settings->senderFrame == 0xfe) &&
+            //     settings->receiverFrame == 0xE;
+            // resetFrameSequence(settings);
+            // return !isEcho;
+        }
+        if (frame == 0x73 && !settings->server)
+        {
+            return settings->senderFrame == 0xFE && settings->receiverFrame == 0xE;
+        }
+        return 1;
+    }
+    // If S -frame
+    // if ((frame & 0x1) == 1)
+    // {
+    //     //If echo.
+    //     if (frame == (settings->senderFrame & 0xF1))
+    //     {
+    //         return 0;
+    //     }
+    //     settings->receiverFrame = increaseReceiverSequence(settings->receiverFrame);
+    //     return 1;
+    // }
+    //Handle I-frame.
+    unsigned char expected;
+    // if ((settings->senderFrame & 0x1) == 0)
+    // {
+    //     expected = increaseReceiverSequence(increaseSendSequence(settings->receiverFrame));
+    //     if (frame == expected)
+    //     {
+    //         settings->receiverFrame = frame;
+    //         return 1;
+    //     }
+    //     //If the final bit is not set.
+    //     if (frame == (expected & ~0x10) && settings->windowSizeRX != 1)
+    //     {
+    //         settings->receiverFrame = frame;
+    //         return 1;
+    //     }
+    //     //If Final bit is not set for the previous message.
+    //     if ((settings->receiverFrame & 0x10) == 0 && settings->windowSizeRX != 1)
+    //     {
+    //         expected = (unsigned char)(0x10 | increaseSendSequence(settings->receiverFrame));
+    //         if (frame == expected)
+    //         {
+    //             settings->receiverFrame = frame;
+    //             return 1;
+    //         }
+    //         //If the final bit is not set.
+    //         if (frame == (expected & ~0x10))
+    //         {
+    //             settings->receiverFrame = frame;
+    //             return 1;
+    //         }
+    //     }
+    // }
+    // //If answer for RR.
+    // else
+    // {
+    //     expected = increaseSendSequence(settings->receiverFrame);
+    //     if (frame == expected)
+    //     {
+    //         settings->receiverFrame = frame;
+    //         return 1;
+    //     }
+    //     if (frame == (expected & ~0x10))
+    //     {
+    //         settings->receiverFrame = frame;
+    //         return 1;
+    //     }
+    //     if (settings->windowSizeRX != 1)
+    //     {
+    //         //If HDLC window size is bigger than one.
+    //         if (frame == (expected | 0x10))
+    //         {
+    //             settings->receiverFrame = frame;
+    //             return 1;
+    //         }
+    //     }
+    // }
+    // //Pre-established connections needs this.
+    // if ((!settings->server && settings->receiverFrame == SERVER_START_RECEIVER_FRAME_SEQUENCE) ||
+    //     (settings->server && settings->receiverFrame == CLIENT_START_RCEIVER_FRAME_SEQUENCE))
+    // {
+    //     settings->receiverFrame = frame;
+    //     return 1;
+    // }
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)//If Windows or Linux
+    printf("Invalid frame %X. Expected %X.\r\n", frame, expected);
+#endif
+    return 0;
+}
+
 // unsigned char getNextSend(
 //     dlmsSettings* settings, unsigned char first)
 // {

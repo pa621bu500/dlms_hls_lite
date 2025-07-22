@@ -58,9 +58,7 @@ int com_readSerialPort(
     unsigned char eopFound = 0;
     int lastReadIndex = 0;
 #if defined(_WIN32) || defined(_WIN64) // Windows
-    unsigned long RecieveErrors;
-    COMSTAT comstat;
-    DWORD bytesRead = 0;
+    //EVS2 NOT SUPPORTED
 #else
     unsigned short bytesRead = 0;
     unsigned short readTime = 0;
@@ -220,26 +218,26 @@ int readDLMSPacket(
                 break;
             }
         }
-        // else
-        // {
-        //     ret = cl_getData2(&connection->settings, &connection->data, reply, &notify, &isNotify);
-        //     if (ret != 0 && ret != DLMS_ERROR_CODE_FALSE)
-        //     {
-        //         break;
-        //     }
-        //     if (isNotify)
-        //     {
-        //         gxByteBuffer bb;
-        //         bb_init(&bb);
-        //         var_toString(&notify.dataValue, &bb);
-        //         char* tmp = bb_toString(&bb);
-        //         printf("Notification received: %s", tmp);
-        //         free(tmp);
-        //         bb_clear(&bb);
-        //     }
-        // }
+        else
+        {
+            ret = cl_getData2(&connection->settings, &connection->data, reply, &notify, &isNotify);
+            if (ret != 0 && ret != DLMS_ERROR_CODE_FALSE)
+            {
+                break;
+            }
+            // if (isNotify)
+            // {
+            //     gxByteBuffer bb;
+            //     bb_init(&bb);
+            //     var_toString(&notify.dataValue, &bb);
+            //     char* tmp = bb_toString(&bb);
+            //     printf("Notification received: %s", tmp);
+            //     free(tmp);
+            //     bb_clear(&bb);
+            // }
+        }
     } while (reply->complete == 0);
-    // reply_clear(&notify);
+    reply_clear(&notify);
     if (connection->trace == GX_TRACE_LEVEL_VERBOSE)
     {
         printf("\n");
@@ -355,11 +353,11 @@ int com_updateInvocationCounter(
         // Get meter's send and receive buffers size.
         if (ret = cl_snrmRequest(&connection->settings, &messages) != 0 ||
         (ret = com_readDataBlock(connection, &messages, &reply)) != 0 
-        // || 
-        //  (ret = cl_parseUAResponse(&connection->settings, &reply.data)) != 0
+        || 
+         (ret = cl_parseUAResponse(&connection->settings, &reply.data)) != 0
         )
         {
-            printf("S");
+            printf("Sss");
         }
         mes_clear(&messages);
         reply_clear(&reply);

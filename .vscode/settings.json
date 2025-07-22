@@ -9,6 +9,9 @@
         "xutility": "c",
         "bytebuffer.h": "c",
         "gxmem.h": "c",
-        "helpers.h": "c"
+        "helpers.h": "c",
+        "client.h": "c",
+        "connection.h": "c",
+        "cosem.h": "c"
     }
 }
