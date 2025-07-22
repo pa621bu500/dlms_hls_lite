@@ -402,22 +402,22 @@ int com_updateInvocationCounter(
         cosem_init(BASE(d), DLMS_OBJECT_TYPE_DATA, invocationCounter);
         if ((ret = com_read(connection, BASE(d), 2)) == 0)
         {
-            connection->settings.cipher.invocationCounter = 1 + var_toInteger(&d.value);
-            if (connection->trace > GX_TRACE_LEVEL_WARNING)
-            {
-                // printf("Invocation counter: %u (0x%X)\r\n",
-                // connection->settings.cipher.invocationCounter,
-                // connection->settings.cipher.invocationCounter);
-            }
-            // It's OK if this fails.
-            com_disconnect(connection);
-            connection->settings.clientAddress = add;
-            connection->settings.authentication = auth;
-            connection->settings.cipher.security = security;
-            bb_clear(&connection->settings.ctoSChallenge);
-            bb_set(&connection->settings.ctoSChallenge, challenge.data, challenge.size);
-            bb_clear(&challenge);
-            connection->settings.preEstablishedSystemTitle = preEstablishedSystemTitle;  
+            // connection->settings.cipher.invocationCounter = 1 + var_toInteger(&d.value);
+            // if (connection->trace > GX_TRACE_LEVEL_WARNING)
+            // {
+            //     // printf("Invocation counter: %u (0x%X)\r\n",
+            //     // connection->settings.cipher.invocationCounter,
+            //     // connection->settings.cipher.invocationCounter);
+            // }
+            // // It's OK if this fails.
+            // com_disconnect(connection);
+            // connection->settings.clientAddress = add;
+            // connection->settings.authentication = auth;
+            // connection->settings.cipher.security = security;
+            // bb_clear(&connection->settings.ctoSChallenge);
+            // bb_set(&connection->settings.ctoSChallenge, challenge.data, challenge.size);
+            // bb_clear(&challenge);
+            // connection->settings.preEstablishedSystemTitle = preEstablishedSystemTitle;  
         }
     }
     return ret;
