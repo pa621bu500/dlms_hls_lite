@@ -345,11 +345,11 @@ int readSerialPort(
                 //     }
                 // }
                 if(comm_item==GET_METER_SN || comm_item==GET_RELAY_STATUS || comm_item==POLL_ITEM_TOTAL_ACTIVE_ENERGY){
-                    ret = com_readValue_new(connection, obj, index, comm_item,poll_result);
+                    // ret = com_readValue_new(connection, obj, index, comm_item,poll_result);
                 }else if(comm_item==SET_RELAY_OFF){
-                    ret = relay_off(connection);
+                    // ret = relay_off(connection);
                 }else if(comm_item==SET_RELAY_ON){
-                    ret = relay_on(connection);
+                    // ret = relay_on(connection);
                 }
                 // ret = com_readValue(connection, obj, index);
             } while ((p = strchr(p2, ',')) != NULL);
