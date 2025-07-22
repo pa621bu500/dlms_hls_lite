@@ -361,8 +361,6 @@ int bb_capacity(
             }
             else
             {
-                printf("arr=%p\n", arr);
-                printf("arr->data=%p\n", arr->data);
                 unsigned char *old = arr->data;
 #ifdef gxrealloc
 
@@ -560,4 +558,33 @@ int bb_move(
         }
     }
     return DLMS_ERROR_CODE_OK;
+}
+
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+int bb_insert(const unsigned char* src,
+    uint32_t count,
+    gxByteBuffer* target,
+    uint32_t index)
+#else
+int bb_insert(const unsigned char* src,
+    uint16_t count,
+    gxByteBuffer* target,
+    uint16_t index)
+#endif
+{
+    int ret;
+    if (target->size == 0)
+    {
+        ret = bb_set(target, src, count);
+    }
+    else
+    {
+        if ((ret = bb_capacity(target, target->size + count)) == 0 &&
+            (ret = bb_move(target, index, index + count, target->size - index)) == 0)
+        {
+            //Do not use memcpy here!
+            memmove(target->data + index, src + index, count);
+        }
+    }
+    return ret;
 }

@@ -11,6 +11,7 @@
 #include "dlmssettings.h"
 #include "variant.h"
 #include "replydata.h"
+#include "parameters.h"
 
 int dlms_getHdlcFrame(
 dlmsSettings* settings,
@@ -23,6 +24,25 @@ gxByteBuffer* reply);
 // dlmsSettings* settings,
 // DLMS_DATA_REQUEST_TYPES type,
 // gxByteBuffer* reply);
+
+/**
+* Get next logical name PDU.
+*
+* @param p
+*            LN parameters.
+* @param reply
+*            Generated message.
+*/
+int dlms_getLNPdu(
+gxLNParameters* p,
+gxByteBuffer* reply);
+
+
+unsigned char dlms_useHdlc(DLMS_INTERFACE_TYPE type);
+
+int dlms_addLLCBytes(
+    dlmsSettings* settings,
+    gxByteBuffer* data);
 
 int dlms_getData2(
     dlmsSettings* settings,
@@ -44,5 +64,10 @@ int dlms_parseSnrmUaResponse(
 
 int dlms_checkInit(
 dlmsSettings* settings);
+
+int dlms_getLnMessages(
+gxLNParameters* p,
+message* reply);
+
 
 #endif

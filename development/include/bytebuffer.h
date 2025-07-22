@@ -19,6 +19,21 @@ typedef struct
 #endif
 } gxByteBuffer;
 
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+    int bb_insert(
+        const unsigned char* src,
+        uint32_t count,
+        gxByteBuffer* target,
+        uint32_t index);
+
+#else
+    int bb_insert(
+        const unsigned char* src,
+        uint16_t count,
+        gxByteBuffer* target,
+        uint16_t index);
+#endif
+
 char bb_isAttached(
     gxByteBuffer *arr);
 

@@ -206,8 +206,8 @@ int cl_aarqRequest(
         if (settings->useLogicalNameReferencing)
         {
             gxLNParameters p;
-            // params_initLN(&p, settings, 0, DLMS_COMMAND_AARQ, 0, pdu, NULL, 0xFF, DLMS_COMMAND_NONE, 0, 0);
-            // ret = dlms_getLnMessages(&p, messages);
+            params_initLN(&p, settings, 0, DLMS_COMMAND_AARQ, 0, pdu, NULL, 0xFF, DLMS_COMMAND_NONE, 0, 0);
+            ret = dlms_getLnMessages(&p, messages);
         }
         else
         {

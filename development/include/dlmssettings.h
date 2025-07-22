@@ -267,11 +267,12 @@ void cl_init(
     const char *password,
     DLMS_INTERFACE_TYPE interfaceType);
 
-#endif
-
 void cl_clear(
     dlmsSettings *settings);
 void cip_clear(ciphering *target);
 
 unsigned char isCiphered(
     ciphering *cipher);
+
+#endif
+
