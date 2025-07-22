@@ -21,7 +21,6 @@
 #include "../../development/include/gxobjects.h"
 #include "../../development/include/bytebuffer.h"
 #include "../../development/include/client.h"
-#include "../../development/include/connection.h"
 
 int com_open(
     connection *connection,
@@ -320,51 +319,6 @@ int com_readDataBlock(
     return ret;
 }
 
-//Read object.
-int com_read(
-    connection* connection,
-    gxObject* object,
-    unsigned char attributeOrdinal)
-{
-    int ret;
-    message data;
-    gxReplyData reply;
-    mes_init(&data);
-    reply_init(&reply);
-    if ((ret = cl_read(&connection->settings, object, attributeOrdinal, &data)) != 0 ||
-        (ret = com_readDataBlock(connection, &data, &reply)) != 0 
-        // ||
-        // (ret = cl_updateValue(&connection->settings, object, attributeOrdinal, &reply.dataValue)) != 0
-    )
-    {
-        // com_reportError("ReadObject failed", object, attributeOrdinal, ret);
-        printf("ReadObject failed");
-    }
-    mes_clear(&data);
-    reply_clear(&reply);
-    return ret;
-}
-
-
-int com_disconnect(
-    connection* connection)
-{
-    int ret = DLMS_ERROR_CODE_OK;
-    gxReplyData reply;
-    message msg;
-    reply_init(&reply);
-    mes_init(&msg);
-    // if ((ret = cl_disconnectRequest(&connection->settings, &msg)) != 0 ||
-    //     (ret = com_readDataBlock(connection, &msg, &reply)) != 0)
-    // {
-    //     //Show error but continue close.
-    //     printf("Close failed.");
-    // }
-    reply_clear(&reply);
-    mes_clear(&msg);
-    return ret;
-}
-
 int com_updateInvocationCounter(
     connection *connection,
     const char *invocationCounter)
@@ -441,71 +395,27 @@ int com_updateInvocationCounter(
             // Allocate 50 bytes more because some meters count this wrong and send few bytes too many.
             con_initializeBuffers(connection, 50 + connection->settings.maxPduSize);
         }
-         mes_clear(&messages);
-        reply_clear(&reply);
-        if (connection->settings.maxPduSize == 0xFFFF)
-        {
-            con_initializeBuffers(connection, connection->settings.maxPduSize);
-        }
-        else
-        {
-            // Allocate 50 bytes more because some meters count this wrong and send few bytes too many.
-            con_initializeBuffers(connection, 50 + connection->settings.maxPduSize);
-        }
-        mes_clear(&messages);
-        reply_clear(&reply);
-        if (connection->settings.maxPduSize == 0xFFFF)
-        {
-            con_initializeBuffers(connection, connection->settings.maxPduSize);
-        }
-        else
-        {
-            // Allocate 50 bytes more because some meters count this wrong and send few bytes too many.
-            con_initializeBuffers(connection, 50 + connection->settings.maxPduSize);
-        }
-         reply_clear(&reply);
-        if (connection->settings.maxPduSize == 0xFFFF)
-        {
-            con_initializeBuffers(connection, connection->settings.maxPduSize);
-        }
-        else
-        {
-            // Allocate 50 bytes more because some meters count this wrong and send few bytes too many.
-            con_initializeBuffers(connection, 50 + connection->settings.maxPduSize);
-        }
-    
-        mes_clear(&messages);
-        reply_clear(&reply);
-        if (connection->settings.maxPduSize == 0xFFFF)
-        {
-            // con_initializeBuffers(connection, connection->settings.maxPduSize);
-        }
-        else
-        {
-            // Allocate 50 bytes more because some meters count this wrong and send few bytes too many.
-            con_initializeBuffers(connection, 50 + connection->settings.maxPduSize);
-        }
         gxData d;
-        // cosem_init(BASE(d), DLMS_OBJECT_TYPE_DATA, invocationCounter);
-        // if ((ret = com_read(connection, BASE(d), 2)) == 0)
-        // {
-        //     // connection->settings.cipher.invocationCounter = 1 + var_toInteger(&d.value);
-        //     if (connection->trace > GX_TRACE_LEVEL_WARNING)
-        //     {
-        //         // printf("Invocation counter: %u (0x%X)\r\n",
-        //         // connection->settings.cipher.invocationCounter,
-        //         // connection->settings.cipher.invocationCounter);
-        //     }
-        //     // It's OK if this fails.
-        //     com_disconnect(connection);
-        //     connection->settings.clientAddress = add;
-        //     connection->settings.authentication = auth;
-        //     connection->settings.cipher.security = security;
-        //     bb_clear(&connection->settings.ctoSChallenge);
-        //     bb_set(&connection->settings.ctoSChallenge, challenge.data, challenge.size);
-        //     bb_clear(&challenge);
-        //     connection->settings.preEstablishedSystemTitle = preEstablishedSystemTitle;  
-        // }
+        cosem_init(BASE(d), DLMS_OBJECT_TYPE_DATA, invocationCounter);
+        if ((ret = com_read(connection, BASE(d), 2)) == 0)
+        {
+            connection->settings.cipher.invocationCounter = 1 + var_toInteger(&d.value);
+            if (connection->trace > GX_TRACE_LEVEL_WARNING)
+            {
+                // printf("Invocation counter: %u (0x%X)\r\n",
+                // connection->settings.cipher.invocationCounter,
+                // connection->settings.cipher.invocationCounter);
+            }
+            // It's OK if this fails.
+            com_disconnect(connection);
+            connection->settings.clientAddress = add;
+            connection->settings.authentication = auth;
+            connection->settings.cipher.security = security;
+            bb_clear(&connection->settings.ctoSChallenge);
+            bb_set(&connection->settings.ctoSChallenge, challenge.data, challenge.size);
+            bb_clear(&challenge);
+            connection->settings.preEstablishedSystemTitle = preEstablishedSystemTitle;  
+        }
     }
     return ret;
 }
@@ -567,8 +477,7 @@ int com_initializeConnection(
                 }
                 else
                 {
-                    printf("AARQRequest failed");
-                    // printf("AARQRequest failed %s\r\n", hlp_getErrorMessage(ret));
+                    printf("AARQRequest failed %s\r\n", hlp_getErrorMessage(ret));
                 }
             }
             mes_clear(&messages);
@@ -590,8 +499,7 @@ int com_initializeConnection(
         // Get challenge Is HLS authentication is used.
         if (connection->settings.authentication > DLMS_AUTHENTICATION_LOW)
         {
-            if (
-                (ret = cl_getApplicationAssociationRequest(&connection->settings, &messages)) != 0 ||
+            if ((ret = cl_getApplicationAssociationRequest(&connection->settings, &messages)) != 0 ||
                 (ret = com_readDataBlock(connection, &messages, &reply)) != 0 ||
                 (ret = cl_parseApplicationAssociationResponse(&connection->settings, &reply.data)) != 0)
             {
@@ -611,73 +519,10 @@ int com_initializeConnection(
     return DLMS_ERROR_CODE_OK;
 }
 
-// int com_readValue_new(connection *connection, gxObject *object, unsigned char index, int comm_item, t_poll_result *poll_result)
-// {
-//     int ret;
-//     char *data = NULL;
-//     char ln[25];
-//     ret = hlp_getLogicalNameToString(object->logicalName, ln);
-//     if (ret != DLMS_ERROR_CODE_OK)
-//     {
-//         return ret;
-//     }
-//     if (connection->trace > GX_TRACE_LEVEL_WARNING)
-//     {
-//         // printf("-------- Reading Object %s %s\r\n", obj_typeToString2(object->objectType), ln);
-//     }
-//     ret = com_read(connection, object, index);
-//     if (ret != DLMS_ERROR_CODE_OK)
-//     {
-//         if (connection->trace > GX_TRACE_LEVEL_OFF)
-//         {
-//             printf("Failed to read object %s %s attribute index %d\r\n", obj_typeToString2(object->objectType), ln, index);
-//         }
-//         // Return error if not DLMS error.
-//         if (ret != DLMS_ERROR_CODE_READ_WRITE_DENIED)
-//         {
-//             return ret;
-//         }
-//     }
-//     if (connection->trace > GX_TRACE_LEVEL_WARNING)
-//     {
-//         ret = obj_toString(object, &data);
-//         if (ret != DLMS_ERROR_CODE_OK)
-//         {
-//             return ret;
-//         }
-//         if (data != NULL)
-//         {
-//             // printf("%s\n", data);
-//             char *line = strtok(data, "\n");
-//             while (line != NULL)
-//             {
-//                 char *valuePos = strstr(line, "Index: 2 Value:");
-//                 if (valuePos != NULL)
-//                 {
-//                     // Move the pointer to the content after "Value:"
-//                     char *valueStart = strstr(valuePos, "Value:");
-//                     if (valueStart != NULL)
-//                     {
-//                         valueStart += strlen("Value:"); // Skip past "Value:"
-//                         while (*valueStart == ' ')
-//                             valueStart++; // Trim leading spaces
-//                         parse_rx(valueStart, comm_item, poll_result);
-//                     }
-//                 }
-//                 line = strtok(NULL, "\n");
-//             }
-//             free(data);
-//             data = NULL;
-//         }
-//     }
-//     return 0;
-// }
-
 
 int com_loadHardcodedObjects(connection *connection)
 {
     // Clear old objects from settings
-    //*******INCOMPLETE */
     oa_clear(&connection->settings.objects, 1);
 
     // --- GXDLMSData: 0.0.96.1.0.255 (Serial Number) ---
@@ -723,6 +568,67 @@ int com_loadHardcodedObjects(connection *connection)
     return DLMS_ERROR_CODE_OK;
 }
 
+int com_readValue_new(connection *connection, gxObject *object, unsigned char index, int comm_item, t_poll_result *poll_result)
+{
+    int ret;
+    char *data = NULL;
+    char ln[25];
+    ret = hlp_getLogicalNameToString(object->logicalName, ln);
+    if (ret != DLMS_ERROR_CODE_OK)
+    {
+        return ret;
+    }
+    if (connection->trace > GX_TRACE_LEVEL_WARNING)
+    {
+        // printf("-------- Reading Object %s %s\r\n", obj_typeToString2(object->objectType), ln);
+    }
+    ret = com_read(connection, object, index);
+    if (ret != DLMS_ERROR_CODE_OK)
+    {
+        if (connection->trace > GX_TRACE_LEVEL_OFF)
+        {
+            printf("Failed to read object %s %s attribute index %d\r\n", obj_typeToString2(object->objectType), ln, index);
+        }
+        // Return error if not DLMS error.
+        if (ret != DLMS_ERROR_CODE_READ_WRITE_DENIED)
+        {
+            return ret;
+        }
+    }
+    if (connection->trace > GX_TRACE_LEVEL_WARNING)
+    {
+        ret = obj_toString(object, &data);
+        if (ret != DLMS_ERROR_CODE_OK)
+        {
+            return ret;
+        }
+        if (data != NULL)
+        {
+            // printf("%s\n", data);
+            char *line = strtok(data, "\n");
+            while (line != NULL)
+            {
+                char *valuePos = strstr(line, "Index: 2 Value:");
+                if (valuePos != NULL)
+                {
+                    // Move the pointer to the content after "Value:"
+                    char *valueStart = strstr(valuePos, "Value:");
+                    if (valueStart != NULL)
+                    {
+                        valueStart += strlen("Value:"); // Skip past "Value:"
+                        while (*valueStart == ' ')
+                            valueStart++; // Trim leading spaces
+                        parse_rx(valueStart, comm_item, poll_result);
+                    }
+                }
+                line = strtok(NULL, "\n");
+            }
+            free(data);
+            data = NULL;
+        }
+    }
+    return 0;
+}
 
 int com_initializeOpticalHead(
     connection *connection)
