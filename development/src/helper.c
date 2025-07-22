@@ -143,3 +143,19 @@ unsigned char hlp_swapBits(unsigned char value)
     }
     return ret;
 }
+
+int hlp_getObjectCount2(gxByteBuffer* buff, uint16_t* count)
+{
+    int ret;
+    unsigned char ch;
+    ret = bb_getUInt8(buff, &ch);
+    if (ret != 0)
+    {
+        return ret;
+    }
+    else
+    {
+        *count = ch;
+    }
+    return ret;
+}

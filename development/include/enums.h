@@ -215,7 +215,7 @@ typedef enum
 
       typedef enum
     {
-
+        DLMS_SOURCE_DIAGNOSTIC_NONE = 0,
         DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_REQUIRED = 14
     } DLMS_SOURCE_DIAGNOSTIC;
 

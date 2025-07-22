@@ -229,33 +229,33 @@ int cl_getData2(
     return dlms_getData3(settings, reply, data, notify, 0, isNotify);
 }
 
-// int cl_parseAAREResponse(dlmsSettings* settings, gxByteBuffer* reply)
-// {
-//     int ret;
-//     unsigned char sd;
-//     DLMS_ASSOCIATION_RESULT result;
-//     unsigned char command = 0;
-//     if ((ret = apdu_parsePDU(settings, reply, &result, &sd, &command)) != 0)
-//     {
-//         return ret;
-//     }
-//     if (result != DLMS_ASSOCIATION_RESULT_ACCEPTED)
-//     {
-//         if (result == DLMS_ASSOCIATION_RESULT_TRANSIENT_REJECTED)
-//         {
-//             return DLMS_ERROR_CODE_REJECTED_TRANSIENT;
-//         }
-//         return DLMS_ERROR_CODE_REJECTED_PERMAMENT;
-//     }
-//     settings->isAuthenticationRequired = sd == DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_REQUIRED;
-//     if (!settings->isAuthenticationRequired)
-//     {
-//         settings->connected |= DLMS_CONNECTION_STATE_DLMS;
-//     }
-//     if (settings->dlmsVersionNumber != 6)
-//     {
-//         //Invalid DLMS version number.
-//         return DLMS_ERROR_CODE_INVALID_VERSION_NUMBER;
-//     }
-//     return 0;
-// }
+int cl_parseAAREResponse(dlmsSettings* settings, gxByteBuffer* reply)
+{
+    int ret;
+    unsigned char sd;
+    DLMS_ASSOCIATION_RESULT result;
+    unsigned char command = 0;
+    // if ((ret = apdu_parsePDU(settings, reply, &result, &sd, &command)) != 0)
+    // {
+    //     return ret;
+    // }
+    if (result != DLMS_ASSOCIATION_RESULT_ACCEPTED)
+    {
+        if (result == DLMS_ASSOCIATION_RESULT_TRANSIENT_REJECTED)
+        {
+            return DLMS_ERROR_CODE_REJECTED_TRANSIENT;
+        }
+        return DLMS_ERROR_CODE_REJECTED_PERMAMENT;
+    }
+    settings->isAuthenticationRequired = sd == DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_REQUIRED;
+    if (!settings->isAuthenticationRequired)
+    {
+        settings->connected |= DLMS_CONNECTION_STATE_DLMS;
+    }
+    if (settings->dlmsVersionNumber != 6)
+    {
+        //Invalid DLMS version number.
+        return DLMS_ERROR_CODE_INVALID_VERSION_NUMBER;
+    }
+    return 0;
+}

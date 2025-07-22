@@ -93,7 +93,7 @@ typedef enum
     // // Invalid response
     // DLMS_ERROR_CODE_INVALID_RESPONSE,
     // // Invalid Tag.
-    // DLMS_ERROR_CODE_INVALID_TAG,
+    DLMS_ERROR_CODE_INVALID_TAG,
     // // Encoding failed. Not enough data.
     // DLMS_ERROR_CODE_ENCODING_FAILED,
     DLMS_ERROR_CODE_REJECTED_PERMAMENT,
