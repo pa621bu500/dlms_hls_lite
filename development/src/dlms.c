@@ -294,9 +294,107 @@ int dlms_getLNPdu(
         }
 #endif //DLMS_IGNORE_MALLOC
     }
-    else
+   else
     {
-        printf("reached dlms.getlnpdu else clause");
+        gxByteBuffer header;
+        gxByteBuffer* h;
+        if (p->settings->server)
+        {
+            // bb_attach(&header, pduAttributes, 0, sizeof(pduAttributes));
+            // h = &header;
+        }
+        else
+        {
+#ifdef DLMS_IGNORE_MALLOC
+            bb_attach(&header, pduAttributes, 0, sizeof(pduAttributes));
+            h = &header;
+#else
+            h = reply;
+#endif //DLMS_IGNORE_MALLOC
+        }
+      
+        if (p->command != DLMS_COMMAND_RELEASE_REQUEST)
+        {
+            ret = bb_setUInt8(h, p->requestType);
+            // Add Invoke Id And Priority.
+            if (p->invokeId != 0)
+            {
+                ret = bb_setUInt8(h, p->invokeId);
+            }
+            else
+            {
+                ret = bb_setUInt8(h, dlms_getInvokeIDPriority(p->settings, p->settings->autoIncreaseInvokeID));
+            }
+        }
+#ifndef DLMS_IGNORE_MALLOC
+        // Add attribute descriptor.
+        if (ret == 0 && p->attributeDescriptor != NULL)
+        {
+            ret = bb_set2(reply, p->attributeDescriptor, p->attributeDescriptor->position, p->attributeDescriptor->size);
+        }
+#endif //DLMS_IGNORE_MALLOC
+        if (ret == 0 &&
+            p->command != DLMS_COMMAND_EVENT_NOTIFICATION &&
+            p->command != DLMS_COMMAND_DATA_NOTIFICATION &&
+            (p->settings->negotiatedConformance & DLMS_CONFORMANCE_GENERAL_BLOCK_TRANSFER) == 0)
+        {
+            int totalLength;
+            // If multiple blocks.
+           
+        }
+      
+        // Add data that fits to one block.
+        if (ret == 0 && len == 0)
+        {
+        }
+#ifndef DLMS_IGNORE_HIGH_GMAC
+        if (ret == 0 && ciphering && reply->size != 0 && p->command != DLMS_COMMAND_RELEASE_REQUEST)
+        {
+#ifndef DLMS_IGNORE_MALLOC
+            gxByteBuffer* key;
+#else
+            unsigned char* key;
+#endif //DLMS_IGNORE_MALLOC
+            if (p->settings->cipher.broadcast)
+            {
+#ifndef DLMS_IGNORE_MALLOC
+                key = &p->settings->cipher.broadcastBlockCipherKey;
+#else
+                key = p->settings->cipher.broadcastBlockCipherKey;
+#endif //DLMS_IGNORE_MALLOC
+            }
+            else if (dlms_useDedicatedKey(p->settings) && (p->settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0)
+            {
+                key = p->settings->cipher.dedicatedKey;
+            }
+            else
+            {
+#ifndef DLMS_IGNORE_MALLOC
+                key = &p->settings->cipher.blockCipherKey;
+#else
+                key = p->settings->cipher.blockCipherKey;
+#endif //DLMS_IGNORE_MALLOC
+            }
+#ifdef DLMS_TRACE_PDU
+            cip_tracePdu(1, reply);
+#endif //DLMS_TRACE_PDU
+            ret = cip_encrypt(
+                &p->settings->cipher,
+                p->settings->cipher.security,
+                DLMS_COUNT_TYPE_PACKET,
+                p->settings->cipher.invocationCounter,
+                dlms_getGloMessage(p->settings, p->command, p->encryptedCommand),
+#ifndef DLMS_IGNORE_MALLOC
+                p->settings->cipher.systemTitle.data,
+#else
+                p->settings->cipher.systemTitle,
+#endif //DLMS_IGNORE_MALLOC
+                key,
+                reply);
+        }
+#endif //DLMS_IGNORE_HIGH_GMAC1
+
+  
     }
 #ifndef DLMS_IGNORE_HDLC
     if (ret == 0 && dlms_useHdlc(p->settings->interfaceType))

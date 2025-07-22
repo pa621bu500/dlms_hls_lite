@@ -187,6 +187,7 @@ typedef enum
         DLMS_COMMAND_UA = 0x73,
         DLMS_COMMAND_DISCONNECT_MODE = 0x1f,
          DLMS_COMMAND_REJECTED = 0x97,
+         DLMS_COMMAND_GENERAL_BLOCK_TRANSFER = 0xE0,
     } DLMS_COMMAND;
 
         typedef enum

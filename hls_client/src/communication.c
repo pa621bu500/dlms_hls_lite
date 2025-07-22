@@ -358,6 +358,9 @@ int com_updateInvocationCounter(
         )
         {
             printf("Sss");
+            //   bb_clear(&challenge);
+            // mes_clear(&messages);
+            // reply_clear(&reply);
         }
         mes_clear(&messages);
         reply_clear(&reply);
@@ -566,6 +569,27 @@ int com_loadHardcodedObjects(connection *connection)
     oa_push(&connection->settings.objects, (gxObject *)relay);
 
     return DLMS_ERROR_CODE_OK;
+}
+
+int com_read(
+    connection *connection,
+    gxObject *object,
+    unsigned char attributeOrdinal)
+{
+    int ret;
+    message data;
+    gxReplyData reply;
+    mes_init(&data);
+    reply_init(&reply);
+    if ((ret = cl_read(&connection->settings, object, attributeOrdinal, &data)) != 0 ||
+        (ret = com_readDataBlock(connection, &data, &reply)) != 0 ||
+        (ret = cl_updateValue(&connection->settings, object, attributeOrdinal, &reply.dataValue)) != 0)
+    {
+        com_reportError("ReadObject failed", object, attributeOrdinal, ret);
+    }
+    mes_clear(&data);
+    reply_clear(&reply);
+    return ret;
 }
 
 int com_readValue_new(connection *connection, gxObject *object, unsigned char index, int comm_item, t_poll_result *poll_result)

@@ -26,7 +26,7 @@ typedef enum
     // /*
     // * General block transfer conformance bit.
     // */
-    // DLMS_CONFORMANCE_GENERAL_BLOCK_TRANSFER = 0x4,
+    DLMS_CONFORMANCE_GENERAL_BLOCK_TRANSFER = 0x4,
     // /*
     // * Read conformance bit.
     // */
