@@ -59,7 +59,6 @@ int connectMeter(int argc, char *argv[])
 {
     connection con;
     gxByteBuffer item;
-           printf("reached here");
     bb_init(&item);
     con_init(&con, GX_TRACE_LEVEL_INFO);
     // Initialize settings using Logical Name referencing and HDLC.

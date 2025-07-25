@@ -13,44 +13,45 @@ int var_init(dlmsVARIANT* data)
 
 int var_toInteger(dlmsVARIANT* data)
 {
-    int ret;
-    if ((data->vt & DLMS_DATA_TYPE_BYREF) != 0)
-    {
-        dlmsVARIANT tmp;
-        if ((ret = var_copy(&tmp, data)) == 0)
-        {
-            ret = var_toInteger(&tmp);
-        }
-        else
-        {
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-            assert(0);
-#endif
-            ret = -1;
-        }
-        return ret;
-    }
-    switch (data->vt)
-    {
-    case DLMS_DATA_TYPE_NONE:
-        ret = 0;
-        break;
-    case DLMS_DATA_TYPE_STRING:
-        ret = hlp_stringToInt((const char*)data->strVal);
-        break;
-#ifndef DLMS_IGNORE_DELTA
-    case DLMS_DATA_TYPE_DELTA_UINT32:
-        ret = data->ulVal;
-        break;
-#endif //DLMS_IGNORE_DELTA
-    default:
-#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-        assert(0);
-#endif
-        ret = 0;
-        break;
-    }
-    return ret;
+//     int ret;
+//     if ((data->vt & DLMS_DATA_TYPE_BYREF) != 0)
+//     {
+//         dlmsVARIANT tmp;
+//         if ((ret = var_copy(&tmp, data)) == 0)
+//         {
+//             ret = var_toInteger(&tmp);
+//         }
+//         else
+//         {
+// #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+//             assert(0);
+// #endif
+//             ret = -1;
+//         }
+//         return ret;
+//     }
+//     switch (data->vt)
+//     {
+//     case DLMS_DATA_TYPE_NONE:
+//         ret = 0;
+//         break;
+//     case DLMS_DATA_TYPE_STRING:
+//         ret = hlp_stringToInt((const char*)data->strVal);
+//         break;
+// #ifndef DLMS_IGNORE_DELTA
+//     case DLMS_DATA_TYPE_DELTA_UINT32:
+//         ret = data->ulVal;
+//         break;
+// #endif //DLMS_IGNORE_DELTA
+//     default:
+// #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+//         assert(0);
+// #endif
+//         ret = 0;
+//         break;
+//     }
+    // return ret;
+    return 0;
 }
 
 

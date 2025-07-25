@@ -268,6 +268,25 @@ unsigned char dlms_useHdlc(DLMS_INTERFACE_TYPE type)
 #endif //DLMS_IGNORE_HDLC
 }
 
+unsigned char dlms_getInvokeIDPriority(dlmsSettings* settings, unsigned char increase)
+{
+    unsigned char value = 0;
+    if (settings->priority == DLMS_PRIORITY_HIGH)
+    {
+        value |= 0x80;
+    }
+    if (settings->serviceClass == DLMS_SERVICE_CLASS_CONFIRMED)
+    {
+        value |= 0x40;
+    }
+    if (increase)
+    {
+        settings->invokeID = (unsigned char)((1 + settings->invokeID) & 0xF);
+    }
+    value |= settings->invokeID;
+    return value;
+}
+
 int dlms_getLNPdu(
     gxLNParameters* p,
     gxByteBuffer* reply)
@@ -363,10 +382,10 @@ int dlms_getLNPdu(
                 key = p->settings->cipher.broadcastBlockCipherKey;
 #endif //DLMS_IGNORE_MALLOC
             }
-            else if (dlms_useDedicatedKey(p->settings) && (p->settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0)
-            {
-                key = p->settings->cipher.dedicatedKey;
-            }
+            // else if (dlms_useDedicatedKey(p->settings) && (p->settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0)
+            // {
+            //     key = p->settings->cipher.dedicatedKey;
+            // }
             else
             {
 #ifndef DLMS_IGNORE_MALLOC
@@ -378,19 +397,19 @@ int dlms_getLNPdu(
 #ifdef DLMS_TRACE_PDU
             cip_tracePdu(1, reply);
 #endif //DLMS_TRACE_PDU
-            ret = cip_encrypt(
-                &p->settings->cipher,
-                p->settings->cipher.security,
-                DLMS_COUNT_TYPE_PACKET,
-                p->settings->cipher.invocationCounter,
-                dlms_getGloMessage(p->settings, p->command, p->encryptedCommand),
-#ifndef DLMS_IGNORE_MALLOC
-                p->settings->cipher.systemTitle.data,
-#else
-                p->settings->cipher.systemTitle,
-#endif //DLMS_IGNORE_MALLOC
-                key,
-                reply);
+//             ret = cip_encrypt(
+//                 &p->settings->cipher,
+//                 p->settings->cipher.security,
+//                 DLMS_COUNT_TYPE_PACKET,
+//                 p->settings->cipher.invocationCounter,
+//                 dlms_getGloMessage(p->settings, p->command, p->encryptedCommand),
+// #ifndef DLMS_IGNORE_MALLOC
+//                 p->settings->cipher.systemTitle.data,
+// #else
+//                 p->settings->cipher.systemTitle,
+// #endif //DLMS_IGNORE_MALLOC
+//                 key,
+//                 reply);
         }
 #endif //DLMS_IGNORE_HIGH_GMAC1
 
