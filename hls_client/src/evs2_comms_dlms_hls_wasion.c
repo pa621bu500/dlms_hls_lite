@@ -270,7 +270,6 @@ int connectMeter(int argc, char *argv[])
         // if (comm_item == POLL_ITEM_TOTAL_ACTIVE_ENERGY){
         //     save_meter_reading(poll_result->meter_identity, poll_result->t, poll_result->kwh);
         // }
-        printf("reached here");
     }
     else
     {

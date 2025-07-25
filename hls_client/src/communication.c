@@ -349,8 +349,7 @@ int com_updateInvocationCounter(
         reply_init(&reply);
         // Get meter's send and receive buffers size.
         if (ret = cl_snrmRequest(&connection->settings, &messages) != 0 ||
-        (ret = com_readDataBlock(connection, &messages, &reply)) != 0 
-        || 
+        (ret = com_readDataBlock(connection, &messages, &reply)) != 0 || 
          (ret = cl_parseUAResponse(&connection->settings, &reply.data)) != 0
         )
         {
@@ -362,8 +361,7 @@ int com_updateInvocationCounter(
         mes_clear(&messages);
         reply_clear(&reply);
         if ((ret = cl_aarqRequest(&connection->settings, &messages)) != 0 ||
-            (ret = com_readDataBlock(connection, &messages, &reply)) != 0 
-            ||
+            (ret = com_readDataBlock(connection, &messages, &reply)) != 0 ||
             (ret = cl_parseAAREResponse(&connection->settings, &reply.data)) != 0
         )
         {

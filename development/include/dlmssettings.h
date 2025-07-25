@@ -161,97 +161,173 @@ typedef struct
 
 
 
-typedef struct
-{
-    
-    // Is custom challenges used. If custom challenge is used new challenge is
-    // not generated if it is Set. This is for debugging purposes.
-    unsigned char customChallenges;
+ typedef struct
+    {
+        // Is custom challenges used. If custom challenge is used new challenge is
+        // not generated if it is Set. This is for debugging purposes.
+        unsigned char customChallenges;
 
-    // Client to server challenge.
-    gxByteBuffer ctoSChallenge;
+        // Client to server challenge.
+        gxByteBuffer ctoSChallenge;
 
-    // Server to Client challenge.
-    gxByteBuffer stoCChallenge;
+        // Server to Client challenge.
+        gxByteBuffer stoCChallenge;
 
-    unsigned char sourceSystemTitle[8];
+        unsigned char sourceSystemTitle[8];
 
-    // Invoke ID.
-    unsigned char invokeID;
+        // Invoke ID.
+        unsigned char invokeID;
 
-    // Long Invoke ID.
-    int longInvokeID;
+        //Long Invoke ID.
+        int longInvokeID;
 
-    objectArray objects;
-    // Client address.
-    uint16_t clientAddress;
-    // Server address.
-    uint32_t serverAddress;
-    unsigned char useLogicalNameReferencing;
-    DLMS_INTERFACE_TYPE interfaceType;
-    DLMS_AUTHENTICATION authentication;
-    gxByteBuffer password;
-    gxByteBuffer kek;
+        // Priority.
+        DLMS_PRIORITY priority;
 
-    uint16_t maxPduSize;
-    uint16_t clientPduSize;
+        // Service class.
+        DLMS_SERVICE_CLASS serviceClass;
 
-    unsigned char senderFrame;
+        // Client address.
+        uint16_t clientAddress;
+        //Server address.
+        uint32_t serverAddress;
+        unsigned char useLogicalNameReferencing;
+        DLMS_INTERFACE_TYPE interfaceType;
+        DLMS_AUTHENTICATION authentication;
+        gxByteBuffer password;
+#ifndef DLMS_IGNORE_MALLOC
+        gxByteBuffer kek;
+#else
+        unsigned char kek[16];
+#endif //DLMS_IGNORE_MALLOC
+        /**
+        * DLMS version number.
+        */
+        unsigned char dlmsVersionNumber;
 
-    unsigned char receiverFrame;
-    unsigned char server;
-    unsigned char isAuthenticationRequired;
-    DLMS_CONFORMANCE proposedConformance;
-    // Used max info TX.
-    uint16_t maxInfoTX;
-    // Used max info RX.
-    uint16_t maxInfoRX;
-    // Used max window size in TX.
-    unsigned char windowSizeTX;
-    // Used max window size in RX.
-    unsigned char windowSizeRX;
-    unsigned char dlmsVersionNumber;
-    // Initialize PDU size that is restored after the connection is closed.
-    uint16_t initializePduSize;
-    // Initialized max info TX.
-    uint16_t initializeMaxInfoTX;
-    // Initialized max info RX.
-    uint16_t initializeMaxInfoRX;
-    // Initialized max window size in TX.
-    unsigned char initializeWindowSizeTX;
-    // Initialized max window size in RX.
-    unsigned char initializeWindowSizeRX;
-    uint16_t maxServerPDUSize;
-    ciphering cipher;
-    int16_t userId;
-    unsigned char protocolVersion;
-    uint32_t blockIndex;
-    DLMS_PRIORITY priority;
-    DLMS_SERVICE_CLASS serviceClass;
+        /**
+        * Max PDU size used in communicating.
+        */
+        uint16_t maxPduSize;
 
-    unsigned char qualityOfService;
-    gxByteBuffer *preEstablishedSystemTitle;
-    objectArray releasedObjects;
-    objectArray internalObjects;
-    DLMS_CONNECTION_STATE connected;
-    gxPlcSettings plcSettings;
-    gxByteBuffer *serializedPdu;
-    unsigned char autoIncreaseInvokeID;
-    DLMS_CONFORMANCE negotiatedConformance;
-    unsigned char expectedSecuritySuite;
-    /////////////////////////////////////////////////////////////////////////
-    // Expected security policy.
-    // If Expected security policy is set client can't connect with other security policies.
-    unsigned char expectedSecurityPolicy;
-    /////////////////////////////////////////////////////////////////////////
-    // Expected Invocation(Frame) counter value.
-    // Expected Invocation counter is not check if value is zero.
+        /**
+        * The PDU size proposed by the client.
+        */
+        uint16_t clientPduSize;
 
-    uint32_t *expectedInvocationCounter;
-    /////////////////////////////////////////////////////////////////////////
-    // Expected client system title.
-    unsigned char *expectedClientSystemTitle;
-} dlmsSettings;
+        /**
+        * Max PDU size that server uses. Client can ask anything, but server will decide.
+        */
+        uint16_t maxServerPDUSize;
+
+        /**
+        * HDLC sender frame sequence number.
+        */
+        unsigned char senderFrame;
+
+        /**
+        * HDLC receiver block sequence number.
+        */
+        unsigned char receiverFrame;
+        unsigned char server;
+        unsigned char isAuthenticationRequired;
+
+        // The client side defines which services the client wants to use.
+        // The server side defines available services.
+        DLMS_CONFORMANCE proposedConformance;
+
+        // Defines the services agreed upon between the client and the server, 
+        // based on the client's needs and the server's capabilities.
+        DLMS_CONFORMANCE negotiatedConformance;
+
+        // On the server side defines what conformances the client proposed.
+        // This information is needed with secure release.
+        DLMS_CONFORMANCE clientProposedConformance;
+
+        //Used max info TX.
+        uint16_t maxInfoTX;
+        //Used max info RX.
+        uint16_t maxInfoRX;
+        //Used max window size in TX.
+        unsigned char windowSizeTX;
+        //Used max window size in RX.
+        unsigned char windowSizeRX;
+
+        // Initialize PDU size that is restored after the connection is closed.
+        uint16_t initializePduSize;
+        //Initialized max info TX.
+        uint16_t initializeMaxInfoTX;
+        //Initialized max info RX.
+        uint16_t initializeMaxInfoRX;
+        //Initialized max window size in TX.
+        unsigned char initializeWindowSizeTX;
+        //Initialized max window size in RX.
+        unsigned char initializeWindowSizeRX;
+#ifndef DLMS_IGNORE_PLC
+        //PLC settings.
+        gxPlcSettings plcSettings;
+#endif //DLMS_IGNORE_PLC
+
+        //List of internal COSEM objects.
+        //Objects in this list are not added to assocaition view.
+        //Objects can be used to save internal data.
+        objectArray internalObjects;
+
+        //List of COSEM objects.
+        objectArray objects;
+
+        // Block packet index.
+        uint32_t blockIndex;
+        //Is connected to the meter.
+        DLMS_CONNECTION_STATE connected;
+
+#ifndef DLMS_IGNORE_HIGH_GMAC
+        ciphering cipher;
+#endif //DLMS_IGNORE_HIGH_GMAC
+
+        int16_t userId;
+
+        /**
+        *  Protocol version.
+        */
+        unsigned char protocolVersion;
+
+        unsigned char qualityOfService;
+        //Pre-established Application Associations system title.
+
+#ifndef DLMS_IGNORE_MALLOC
+        gxByteBuffer* preEstablishedSystemTitle;
+#else
+        unsigned char preEstablishedSystemTitle[8];
+#endif //DLMS_IGNORE_MALLOC
+
+        //Client serializes data to this PDU when malloc is not used or heap size is limited.
+        gxByteBuffer* serializedPdu;
+        //Auto increase Invoke ID.
+        unsigned char autoIncreaseInvokeID;
+        //Client adds objects that are not found from the association view here so they are released when client is clear.
+        objectArray releasedObjects;
+
+        /////////////////////////////////////////////////////////////////////////
+        // Expected security suite.
+        // If Expected security suite is set client can't connect with other security suite.
+        unsigned char expectedSecuritySuite;
+        /////////////////////////////////////////////////////////////////////////
+        // Expected security policy.
+        // If Expected security policy is set client can't connect with other security policies.
+        unsigned char expectedSecurityPolicy;
+        /////////////////////////////////////////////////////////////////////////
+        // Expected Invocation(Frame) counter value.
+        // Expected Invocation counter is not check if value is zero.
+#ifdef DLMS_COSEM_INVOCATION_COUNTER_SIZE64
+        uint64_t* expectedInvocationCounter;
+#else
+        uint32_t* expectedInvocationCounter;
+#endif //DLMS_COSEM_INVOCATION_COUNTER_SIZE64
+        /////////////////////////////////////////////////////////////////////////
+        // Expected client system title.
+        unsigned char* expectedClientSystemTitle;
+    } dlmsSettings;
 
 typedef struct
 {
