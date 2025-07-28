@@ -32,6 +32,12 @@ static const unsigned char HDLC_FRAME_START_END = 0x7E;
 // }
 
 
+/*
+   - this function is used to build data link layer 
+   - attributes
+        - data (Data to send in the frame)
+        - reply (Output buffer to hold the final HDLC frame)
+*/
 int dlms_getHdlcFrame(
     dlmsSettings* settings,
     int frame,
@@ -134,7 +140,7 @@ int dlms_getHdlcFrame(
     // Add frame ID.
     if (ret == 0 && frame == 0)
     {
-        // ret = bb_setUInt8(reply, getNextSend(settings, 1));
+        ret = bb_setUInt8(reply, getNextSend(settings, 1));
     }
     else if (ret == 0)
     {
@@ -1183,6 +1189,15 @@ int dlms_parseSnrmUaResponse(
         }
     }
     return ret;
+}
+
+unsigned char dlms_usePreEstablishedConnection(dlmsSettings* settings)
+{
+#ifndef DLMS_IGNORE_MALLOC
+    return settings->preEstablishedSystemTitle != NULL;
+#else
+    return memcmp(settings->preEstablishedSystemTitle, EMPTY_SYSTEM_TITLE, 8) != 0;
+#endif //DLMS_IGNORE_MALLOC
 }
 
 int dlms_checkInit(dlmsSettings* settings)

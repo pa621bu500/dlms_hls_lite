@@ -7,111 +7,216 @@
 #include "enums.h"
 #include "objectarray.h"
 
+// typedef enum
+// {
+//     /*
+//      * Reserved zero conformance bit.
+//      */
+//     DLMS_CONFORMANCE_NONE = 0,
+//     /*
+//      * Reserved zero conformance bit.
+//      */
+//     DLMS_CONFORMANCE_RESERVED_ZERO = 0x1,
+
+//     /*
+//     * General protection conformance bit.
+//     // */
+//     DLMS_CONFORMANCE_GENERAL_PROTECTION = 0x2,
+
+//     // /*
+//     // * General block transfer conformance bit.
+//     // */
+//     DLMS_CONFORMANCE_GENERAL_BLOCK_TRANSFER = 0x4,
+//     // /*
+//     // * Read conformance bit.
+//     // */
+//     // DLMS_CONFORMANCE_READ = 0x8,
+//     // /*
+//     // * Write conformance bit.
+//     // */
+//     // DLMS_CONFORMANCE_WRITE = 0x10,
+//     // /*
+//     // * Un confirmed write conformance bit.
+//     // */
+//     // DLMS_CONFORMANCE_UN_CONFIRMED_WRITE = 0x20,
+//     // /*
+//     // Delta value encoding.
+//     // */
+//     // DLMS_CONFORMANCE_DELTA_VALUE_ENCODING = 0x40,
+//     // /*
+//     // * Reserved seven conformance bit.
+//     // */
+//     // DLMS_CONFORMANCE_RESERVED_SEVEN = 0x80,
+//     // /*
+//     // * Attribute 0 supported with set conformance bit.
+//     // */
+//     // DLMS_CONFORMANCE_ATTRIBUTE_0_SUPPORTED_WITH_SET = 0x100,
+//     // /*
+//     // * Priority mgmt supported conformance bit.
+//     // */
+//     // DLMS_CONFORMANCE_PRIORITY_MGMT_SUPPORTED = 0x200,
+//     // /*
+//     // * Attribute 0 supported with get conformance bit.
+//     // */
+//     // DLMS_CONFORMANCE_ATTRIBUTE_0_SUPPORTED_WITH_GET = 0x400,
+//     // /*
+//     // * Block transfer with get or read conformance bit.
+//     // */
+//     DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_GET_OR_READ = 0x800,
+//     // /*
+//     // * Block transfer with set or write conformance bit.
+//     // */
+//     DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_SET_OR_WRITE = 0x1000,
+//     // /*
+//     // * Block transfer with action conformance bit.
+//     // */
+//     DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_ACTION = 0x2000,
+//     // /*
+//     // * multiple references conformance bit.
+//     // */
+//     DLMS_CONFORMANCE_MULTIPLE_REFERENCES = 0x4000,
+//     // /*
+//     // * Information report conformance bit.
+//     // */
+//     // DLMS_CONFORMANCE_INFORMATION_REPORT = 0x8000,
+//     // /*
+//     // * Data notification conformance bit.
+//     // */
+//     // DLMS_CONFORMANCE_DATA_NOTIFICATION = 0x10000,
+//     // /*
+//     // * Access conformance bit.
+//     // */
+//     // DLMS_CONFORMANCE_ACCESS = 0x20000,
+//     // /*
+//     // * Parameterized access conformance bit.
+//     // */
+//     // DLMS_CONFORMANCE_PARAMETERIZED_ACCESS = 0x40000,
+//     // /*
+//     // * Get conformance bit.
+//     // */
+//     DLMS_CONFORMANCE_GET = 0x80000,
+//     // /*
+//     // * Set conformance bit.
+//     // */
+//     DLMS_CONFORMANCE_SET = 0x100000,
+//     // /*
+//     // * Selective access conformance bit.
+//     // */
+//     DLMS_CONFORMANCE_SELECTIVE_ACCESS = 0x200000,
+//     // /*
+//     // * Event notification conformance bit.
+//     // */
+//     // DLMS_CONFORMANCE_EVENT_NOTIFICATION = 0x400000,
+//     // /*
+//     // * Action conformance bit.
+//     // */
+//     DLMS_CONFORMANCE_ACTION = 0x800000
+// } DLMS_CONFORMANCE;
 typedef enum
-{
-    /*
-     * Reserved zero conformance bit.
-     */
-    DLMS_CONFORMANCE_NONE = 0,
-    /*
-     * Reserved zero conformance bit.
-     */
-    // DLMS_CONFORMANCE_RESERVED_ZERO = 0x1,
+    {
+        /*
+        * Reserved zero conformance bit.
+        */
+        DLMS_CONFORMANCE_NONE = 0,
+        /*
+        * Reserved zero conformance bit.
+        */
+        DLMS_CONFORMANCE_RESERVED_ZERO = 0x1,
 
-    /*
-    * General protection conformance bit.
-    // */
-    DLMS_CONFORMANCE_GENERAL_PROTECTION = 0x2,
+        /*
+        * General protection conformance bit.
+        */
+        DLMS_CONFORMANCE_GENERAL_PROTECTION = 0x2,
 
-    // /*
-    // * General block transfer conformance bit.
-    // */
-    DLMS_CONFORMANCE_GENERAL_BLOCK_TRANSFER = 0x4,
-    // /*
-    // * Read conformance bit.
-    // */
-    // DLMS_CONFORMANCE_READ = 0x8,
-    // /*
-    // * Write conformance bit.
-    // */
-    // DLMS_CONFORMANCE_WRITE = 0x10,
-    // /*
-    // * Un confirmed write conformance bit.
-    // */
-    // DLMS_CONFORMANCE_UN_CONFIRMED_WRITE = 0x20,
-    // /*
-    // Delta value encoding.
-    // */
-    // DLMS_CONFORMANCE_DELTA_VALUE_ENCODING = 0x40,
-    // /*
-    // * Reserved seven conformance bit.
-    // */
-    // DLMS_CONFORMANCE_RESERVED_SEVEN = 0x80,
-    // /*
-    // * Attribute 0 supported with set conformance bit.
-    // */
-    // DLMS_CONFORMANCE_ATTRIBUTE_0_SUPPORTED_WITH_SET = 0x100,
-    // /*
-    // * Priority mgmt supported conformance bit.
-    // */
-    // DLMS_CONFORMANCE_PRIORITY_MGMT_SUPPORTED = 0x200,
-    // /*
-    // * Attribute 0 supported with get conformance bit.
-    // */
-    // DLMS_CONFORMANCE_ATTRIBUTE_0_SUPPORTED_WITH_GET = 0x400,
-    // /*
-    // * Block transfer with get or read conformance bit.
-    // */
-    DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_GET_OR_READ = 0x800,
-    // /*
-    // * Block transfer with set or write conformance bit.
-    // */
-    DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_SET_OR_WRITE = 0x1000,
-    // /*
-    // * Block transfer with action conformance bit.
-    // */
-    DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_ACTION = 0x2000,
-    // /*
-    // * multiple references conformance bit.
-    // */
-    DLMS_CONFORMANCE_MULTIPLE_REFERENCES = 0x4000,
-    // /*
-    // * Information report conformance bit.
-    // */
-    // DLMS_CONFORMANCE_INFORMATION_REPORT = 0x8000,
-    // /*
-    // * Data notification conformance bit.
-    // */
-    // DLMS_CONFORMANCE_DATA_NOTIFICATION = 0x10000,
-    // /*
-    // * Access conformance bit.
-    // */
-    // DLMS_CONFORMANCE_ACCESS = 0x20000,
-    // /*
-    // * Parameterized access conformance bit.
-    // */
-    // DLMS_CONFORMANCE_PARAMETERIZED_ACCESS = 0x40000,
-    // /*
-    // * Get conformance bit.
-    // */
-    DLMS_CONFORMANCE_GET = 0x80000,
-    // /*
-    // * Set conformance bit.
-    // */
-    DLMS_CONFORMANCE_SET = 0x100000,
-    // /*
-    // * Selective access conformance bit.
-    // */
-    DLMS_CONFORMANCE_SELECTIVE_ACCESS = 0x200000,
-    // /*
-    // * Event notification conformance bit.
-    // */
-    // DLMS_CONFORMANCE_EVENT_NOTIFICATION = 0x400000,
-    // /*
-    // * Action conformance bit.
-    // */
-    DLMS_CONFORMANCE_ACTION = 0x800000
-} DLMS_CONFORMANCE;
+        /*
+        * General block transfer conformance bit.
+        */
+        DLMS_CONFORMANCE_GENERAL_BLOCK_TRANSFER = 0x4,
+        /*
+        * Read conformance bit.
+        */
+        DLMS_CONFORMANCE_READ = 0x8,
+        /*
+        * Write conformance bit.
+        */
+        DLMS_CONFORMANCE_WRITE = 0x10,
+        /*
+        * Un confirmed write conformance bit.
+        */
+        DLMS_CONFORMANCE_UN_CONFIRMED_WRITE = 0x20,
+        /*
+        Delta value encoding.
+        */
+        DLMS_CONFORMANCE_DELTA_VALUE_ENCODING = 0x40,
+        /*
+        * Reserved seven conformance bit.
+        */
+        DLMS_CONFORMANCE_RESERVED_SEVEN = 0x80,
+        /*
+        * Attribute 0 supported with set conformance bit.
+        */
+        DLMS_CONFORMANCE_ATTRIBUTE_0_SUPPORTED_WITH_SET = 0x100,
+        /*
+        * Priority mgmt supported conformance bit.
+        */
+        DLMS_CONFORMANCE_PRIORITY_MGMT_SUPPORTED = 0x200,
+        /*
+        * Attribute 0 supported with get conformance bit.
+        */
+        DLMS_CONFORMANCE_ATTRIBUTE_0_SUPPORTED_WITH_GET = 0x400,
+        /*
+        * Block transfer with get or read conformance bit.
+        */
+        DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_GET_OR_READ = 0x800,
+        /*
+        * Block transfer with set or write conformance bit.
+        */
+        DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_SET_OR_WRITE = 0x1000,
+        /*
+        * Block transfer with action conformance bit.
+        */
+        DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_ACTION = 0x2000,
+        /*
+        * multiple references conformance bit.
+        */
+        DLMS_CONFORMANCE_MULTIPLE_REFERENCES = 0x4000,
+        /*
+        * Information report conformance bit.
+        */
+        DLMS_CONFORMANCE_INFORMATION_REPORT = 0x8000,
+        /*
+        * Data notification conformance bit.
+        */
+        DLMS_CONFORMANCE_DATA_NOTIFICATION = 0x10000,
+        /*
+        * Access conformance bit.
+        */
+        DLMS_CONFORMANCE_ACCESS = 0x20000,
+        /*
+        * Parameterized access conformance bit.
+        */
+        DLMS_CONFORMANCE_PARAMETERIZED_ACCESS = 0x40000,
+        /*
+        * Get conformance bit.
+        */
+        DLMS_CONFORMANCE_GET = 0x80000,
+        /*
+        * Set conformance bit.
+        */
+        DLMS_CONFORMANCE_SET = 0x100000,
+        /*
+        * Selective access conformance bit.
+        */
+        DLMS_CONFORMANCE_SELECTIVE_ACCESS = 0x200000,
+        /*
+        * Event notification conformance bit.
+        */
+        DLMS_CONFORMANCE_EVENT_NOTIFICATION = 0x400000,
+        /*
+        * Action conformance bit.
+        */
+        DLMS_CONFORMANCE_ACTION = 0x800000
+    }DLMS_CONFORMANCE;
 
 typedef struct
 {

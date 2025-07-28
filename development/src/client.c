@@ -148,11 +148,11 @@ int cl_aarqRequest(
         //Invalid conformance.
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
-    // if (dlms_usePreEstablishedConnection(settings))
-    // {
-    //     //Invalid conformance.
-    //     return DLMS_ERROR_CODE_INVALID_PARAMETER;
-    // }
+    if (dlms_usePreEstablishedConnection(settings))
+    {
+        //Invalid conformance.
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
 
     //Save default values.
     settings->initializePduSize = settings->maxPduSize;

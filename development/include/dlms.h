@@ -74,5 +74,10 @@ int dlms_getLnMessages(
 gxLNParameters* p,
 message* reply);
 
+/**
+* This function returns true, if pre-established connection is used.
+*/
+unsigned char dlms_usePreEstablishedConnection(dlmsSettings* settings);
+
 
 #endif

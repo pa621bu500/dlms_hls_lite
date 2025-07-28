@@ -199,6 +199,11 @@ int connectMeter(int argc, char *argv[])
     bb_clear(&con.settings.cipher.systemTitle);
     bb_addHexString(&con.settings.cipher.systemTitle, "5753453030303031");
 
+    con.settings.negotiatedConformance = DLMS_CONFORMANCE_RESERVED_ZERO;
+    con.settings.clientProposedConformance = (DLMS_CONFORMANCE_RESERVED_ZERO | DLMS_CONFORMANCE_GENERAL_PROTECTION | DLMS_CONFORMANCE_GENERAL_BLOCK_TRANSFER | DLMS_CONFORMANCE_READ | DLMS_CONFORMANCE_WRITE | DLMS_CONFORMANCE_UN_CONFIRMED_WRITE | DLMS_CONFORMANCE_DELTA_VALUE_ENCODING);
+    con.settings.proposedConformance = (DLMS_CONFORMANCE_GENERAL_PROTECTION | DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_GET_OR_READ | DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_SET_OR_WRITE | DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_ACTION | DLMS_CONFORMANCE_MULTIPLE_REFERENCES | DLMS_CONFORMANCE_GET | DLMS_CONFORMANCE_SET | DLMS_CONFORMANCE_SELECTIVE_ACCESS | DLMS_CONFORMANCE_ACTION);
+
+
     t_poll_result *poll_result;
     poll_result = (t_poll_result *)malloc(sizeof(t_poll_result));
     memset((void *)poll_result, 0x00, sizeof(t_poll_result));

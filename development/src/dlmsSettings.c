@@ -192,6 +192,23 @@ unsigned char isCiphered(
     return cipher->security != DLMS_SECURITY_NONE;
 }
 
+// Increase sender sequence.
+//
+// @param value
+//            Frame value.
+// Increased sender frame sequence.
+unsigned char increaseSendSequence(
+    unsigned char value)
+{
+    return (unsigned char)((value & 0xF0) | ((value + 0x2) & 0xE));
+}
+
+unsigned char increaseReceiverSequence(
+    unsigned char value)
+{
+    return ((value + 0x20) | 0x10 | (value & 0xE));
+}
+
 
 unsigned char checkFrame(
     dlmsSettings* settings,
@@ -301,16 +318,16 @@ unsigned char checkFrame(
     return 0;
 }
 
-// unsigned char getNextSend(
-//     dlmsSettings* settings, unsigned char first)
-// {
-//     if (first)
-//     {
-//         settings->senderFrame = increaseReceiverSequence(increaseSendSequence((unsigned char)settings->senderFrame));
-//     }
-//     else
-//     {
-//         settings->senderFrame = increaseSendSequence((unsigned char)settings->senderFrame);
-//     }
-//     return (unsigned char)settings->senderFrame;
-// }
+unsigned char getNextSend(
+    dlmsSettings* settings, unsigned char first)
+{
+    if (first)
+    {
+        settings->senderFrame = increaseReceiverSequence(increaseSendSequence((unsigned char)settings->senderFrame));
+    }
+    else
+    {
+        settings->senderFrame = increaseSendSequence((unsigned char)settings->senderFrame);
+    }
+    return (unsigned char)settings->senderFrame;
+}

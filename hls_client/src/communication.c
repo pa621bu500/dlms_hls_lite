@@ -51,7 +51,7 @@ int com_open(
 }
 
 int com_readSerialPort(
-    clientConnection *connection,
+    connection *connection,
     unsigned char eop)
 {
     // Read reply data.
@@ -59,7 +59,9 @@ int com_readSerialPort(
     unsigned char eopFound = 0;
     int lastReadIndex = 0;
 #if defined(_WIN32) || defined(_WIN64) // Windows
-    //EVS2 NOT SUPPORTED
+    unsigned long RecieveErrors;
+    COMSTAT comstat;
+    DWORD bytesRead = 0;
 #else
     unsigned short bytesRead = 0;
     unsigned short readTime = 0;
@@ -67,7 +69,36 @@ int com_readSerialPort(
     do
     {
 #if defined(_WIN32) || defined(_WIN64) // Windows
-        // EVS2 NOT SUPPORTED
+        // We do not want to read byte at the time.
+        if (!ClearCommError(connection->comPort, &RecieveErrors, &comstat))
+        {
+            ret = GetLastError();
+            return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
+        }
+        bytesRead = 0;
+        cnt = 1;
+        // Try to read at least one byte.
+        if (comstat.cbInQue > 0)
+        {
+            cnt = comstat.cbInQue;
+        }
+        if (!ReadFile(connection->comPort, connection->data.data + connection->data.size, cnt, &bytesRead, &connection->osReader))
+        {
+            ret = GetLastError();
+            if (ret != ERROR_IO_PENDING)
+            {
+                return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
+            }
+            // Wait until data is actually read
+            if (WaitForSingleObject(connection->osReader.hEvent, connection->waitTime) != WAIT_OBJECT_0)
+            {
+                return DLMS_ERROR_CODE_RECEIVE_FAILED;
+            }
+            if (!GetOverlappedResult(connection->comPort, &connection->osReader, &bytesRead, TRUE))
+            {
+                return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | GetLastError();
+            }
+        }
 #else
         // Get bytes available.
         ret = ioctl(connection->comPort, FIONREAD, &cnt);
@@ -99,14 +130,9 @@ int com_readSerialPort(
                 readTime += 100;
                 bytesRead = 0;
             }
-            // If connection is closed.
-            else if (errno == EBADF)
-            {
-                return DLMS_ERROR_CODE_RECEIVE_FAILED;
-            }
             else
             {
-                return DLMS_ERROR_CODE_RECEIVE_FAILED;
+                return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | errno;
             }
         }
 #endif
@@ -140,7 +166,7 @@ int com_readSerialPort(
     return DLMS_ERROR_CODE_OK;
 }
 
-int readData(connection* connection, gxByteBuffer* data, int* index)
+int readData(connection *connection, gxByteBuffer *data, int *index)
 {
     int ret = 0;
     if (connection->comPort != INVALID_HANDLE_VALUE)
@@ -180,12 +206,17 @@ int readData(connection* connection, gxByteBuffer* data, int* index)
     return 0;
 }
 
+/*
+    - Read DLMS Data frame from the device.
+    - data = tx / request
+    - reply = rx / response
+*/
 int readDLMSPacket(
-    connection* connection,
-    gxByteBuffer* data,
-    gxReplyData* reply)
+    connection *connection,
+    gxByteBuffer *data,
+    gxReplyData *reply)
 {
-    char* hex;
+    char *hex;
     int index = 0, ret;
     if (data->size == 0)
     {
@@ -199,14 +230,14 @@ int readDLMSPacket(
     {
         return ret;
     }
-    //Loop until packet is complete.
-    unsigned char pos = 0;
+    // Loop until packet is complete.
+    unsigned char pos = 2;
     unsigned char isNotify;
     gxReplyData notify;
     reply_init(&notify);
     do
     {
-         if ((ret = readData(connection, &connection->data, &index)) != 0)
+        if ((ret = readData(connection, &connection->data, &index)) != 0)
         {
             if (ret != DLMS_ERROR_CODE_RECEIVE_FAILED || pos == 3)
             {
@@ -249,59 +280,59 @@ int readDLMSPacket(
 int sendData(connection *connection, gxByteBuffer *data)
 {
     int ret = 0;
-    #if defined(_WIN32) || defined(_WIN64) // Windows
-        //EVS2 NOT SUPPORTED
-    #endif
+#if defined(_WIN32) || defined(_WIN64) // Windows
+    // EVS2 NOT SUPPORTED
+#endif
     if (connection->comPort != INVALID_HANDLE_VALUE)
     {
-        #if defined(_WIN32) || defined(_WIN64) // Windows
-            //EVS2 NOT SUPPORTED
-        #else
-                ret = write(connection->comPort, data->data, data->size);
-                if (ret != data->size)
-                {
-                    ret = errno;
-                    return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
-                }
-        #endif
+#if defined(_WIN32) || defined(_WIN64) // Windows
+        // EVS2 NOT SUPPORTED
+#else
+        ret = write(connection->comPort, data->data, data->size);
+        if (ret != data->size)
+        {
+            ret = errno;
+            return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
+        }
+#endif
     }
     else
     {
         if (send(connection->socket, (const char *)data->data, data->size, 0) == -1)
         {
-            #if defined(_WIN32) || defined(_WIN64) // If Windows
-                    //EVS2 NOT SUPPORTED
-            #else
-                ret = errno;
-            #endif
-                return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
+#if defined(_WIN32) || defined(_WIN64) // If Windows
+                                       // EVS2 NOT SUPPORTED
+#else
+            ret = errno;
+#endif
+            return DLMS_ERROR_TYPE_COMMUNICATION_ERROR | ret;
         }
     }
     return 0;
 }
 
 int com_readDataBlock(
-    connection* connection,
-    message* messages,
-    gxReplyData* reply)
+    connection *connection,
+    message *messages,
+    gxReplyData *reply)
 {
     gxByteBuffer rr;
     int pos, ret = DLMS_ERROR_CODE_OK;
-    //If there is no data to send.
+    // If there is no data to send.
     if (messages->size == 0)
     {
         return DLMS_ERROR_CODE_OK;
     }
     bb_init(&rr);
-    //Send data.
+    // Send data.
     for (pos = 0; pos != messages->size; ++pos)
     {
-        //Send data.
+        // Send data.
         if ((ret = readDLMSPacket(connection, messages->data[pos], reply)) != DLMS_ERROR_CODE_OK)
         {
             return ret;
         }
-        //Check is there errors or more data from server
+        // Check is there errors or more data from server
         while (reply_isMoreData(reply))
         {
             // if ((ret = cl_receiverReady(&connection->settings, reply->moreData, &rr)) != DLMS_ERROR_CODE_OK)
@@ -349,9 +380,8 @@ int com_updateInvocationCounter(
         reply_init(&reply);
         // Get meter's send and receive buffers size.
         if (ret = cl_snrmRequest(&connection->settings, &messages) != 0 ||
-        (ret = com_readDataBlock(connection, &messages, &reply)) != 0 || 
-         (ret = cl_parseUAResponse(&connection->settings, &reply.data)) != 0
-        )
+                  (ret = com_readDataBlock(connection, &messages, &reply)) != 0 ||
+                  (ret = cl_parseUAResponse(&connection->settings, &reply.data)) != 0)
         {
             printf("Sss");
             //   bb_clear(&challenge);
@@ -362,8 +392,7 @@ int com_updateInvocationCounter(
         reply_clear(&reply);
         if ((ret = cl_aarqRequest(&connection->settings, &messages)) != 0 ||
             (ret = com_readDataBlock(connection, &messages, &reply)) != 0 ||
-            (ret = cl_parseAAREResponse(&connection->settings, &reply.data)) != 0
-        )
+            (ret = cl_parseAAREResponse(&connection->settings, &reply.data)) != 0)
         {
             bb_clear(&challenge);
             mes_clear(&messages);
@@ -382,7 +411,7 @@ int com_updateInvocationCounter(
             // }
             return ret;
         }
-         mes_clear(&messages);
+        mes_clear(&messages);
         reply_clear(&reply);
         if (connection->settings.maxPduSize == 0xFFFF)
         {
@@ -412,7 +441,7 @@ int com_updateInvocationCounter(
             bb_clear(&connection->settings.ctoSChallenge);
             bb_set(&connection->settings.ctoSChallenge, challenge.data, challenge.size);
             bb_clear(&challenge);
-            connection->settings.preEstablishedSystemTitle = preEstablishedSystemTitle;  
+            connection->settings.preEstablishedSystemTitle = preEstablishedSystemTitle;
         }
     }
     return ret;
@@ -494,7 +523,7 @@ int com_initializeConnection(
                 }
                 else
                 {
-                     printf("AARQRequest failed");
+                    printf("AARQRequest failed");
                     // printf("AARQRequest failed %s\r\n", hlp_getErrorMessage(ret));
                 }
             }
@@ -536,7 +565,6 @@ int com_initializeConnection(
     }
     return DLMS_ERROR_CODE_OK;
 }
-
 
 int com_loadHardcodedObjects(connection *connection)
 {

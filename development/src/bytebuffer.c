@@ -54,6 +54,7 @@ int bb_addHexString(
 #endif // DLMS_IGNORE_MALLOC
 
 int bb_clear(
+
     gxByteBuffer *arr)
 {
 #ifndef DLMS_IGNORE_MALLOC
@@ -87,28 +88,28 @@ int bb_getUInt8(
 }
 
 int bb_getUInt8ByIndex(
-    gxByteBuffer* arr,
+    gxByteBuffer *arr,
     uint32_t index,
-    unsigned char* value)
+    unsigned char *value)
 {
     if (index >= arr->size)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
-    *value = ((unsigned char*)arr->data)[index];
+    *value = ((unsigned char *)arr->data)[index];
     return 0;
 }
 
 int bb_getUInt16(
-    gxByteBuffer* arr,
-    uint16_t* value)
+    gxByteBuffer *arr,
+    uint16_t *value)
 {
     if (arr->position + 2 > arr->size)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
-    *value = (uint16_t)(((unsigned char*)arr->data)[arr->position] << 8 |
-        ((unsigned char*)arr->data)[arr->position + 1]);
+    *value = (uint16_t)(((unsigned char *)arr->data)[arr->position] << 8 |
+                        ((unsigned char *)arr->data)[arr->position + 1]);
     arr->position += 2;
     return 0;
 }
@@ -131,22 +132,22 @@ int bb_setUInt8ByIndex(
 }
 
 int bb_getUInt16ByIndex(
-    gxByteBuffer* arr,
+    gxByteBuffer *arr,
     uint32_t index,
-    uint16_t* value)
+    uint16_t *value)
 {
     if (index + 2 > arr->size)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
-    *value = (uint16_t)(((unsigned char*)arr->data)[index] << 8 |
-        ((unsigned char*)arr->data)[index + 1]);
+    *value = (uint16_t)(((unsigned char *)arr->data)[index] << 8 |
+                        ((unsigned char *)arr->data)[index + 1]);
     return 0;
 }
 
 int bb_getUInt32(
-    gxByteBuffer* arr,
-    uint32_t* value)
+    gxByteBuffer *arr,
+    uint32_t *value)
 {
 
     if (arr->position + 4 > arr->size)
@@ -402,13 +403,13 @@ int bb_capacity(
 
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 unsigned char bb_compare(
-    gxByteBuffer* bb,
-    unsigned char* buff,
+    gxByteBuffer *bb,
+    unsigned char *buff,
     uint32_t length)
 #else
 unsigned char bb_compare(
-    gxByteBuffer* bb,
-    unsigned char* buff,
+    gxByteBuffer *bb,
+    unsigned char *buff,
     uint16_t length)
 #endif
 
@@ -587,15 +588,15 @@ int bb_move(
 }
 
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
-int bb_insert(const unsigned char* src,
-    uint32_t count,
-    gxByteBuffer* target,
-    uint32_t index)
+int bb_insert(const unsigned char *src,
+              uint32_t count,
+              gxByteBuffer *target,
+              uint32_t index)
 #else
-int bb_insert(const unsigned char* src,
-    uint16_t count,
-    gxByteBuffer* target,
-    uint16_t index)
+int bb_insert(const unsigned char *src,
+              uint16_t count,
+              gxByteBuffer *target,
+              uint16_t index)
 #endif
 {
     int ret;
@@ -608,7 +609,7 @@ int bb_insert(const unsigned char* src,
         if ((ret = bb_capacity(target, target->size + count)) == 0 &&
             (ret = bb_move(target, index, index + count, target->size - index)) == 0)
         {
-            //Do not use memcpy here!
+            // Do not use memcpy here!
             memmove(target->data + index, src + index, count);
         }
     }
