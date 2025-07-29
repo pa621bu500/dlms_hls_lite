@@ -80,6 +80,322 @@ int apdu_getAuthenticationString(
     return ret;
 }
 
+/**
+ * Parse User Information from PDU.
+ */
+int apdu_parseUserInformation(
+    dlmsSettings *settings,
+    gxByteBuffer *data,
+    unsigned char ciphered,
+    unsigned char *command)
+{
+    int ret;
+    unsigned char response;
+    uint16_t pduSize;
+    unsigned char ch, len, tag;
+    uint32_t v;
+    if ((ret = bb_getUInt8(data, &len)) != 0)
+    {
+        return ret;
+    }
+    if (data->size - data->position < len)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    // Encoding the choice for user information
+    if ((ret = bb_getUInt8(data, &tag)) != 0)
+    {
+        return ret;
+    }
+    if (tag != 0x4)
+    {
+        return DLMS_ERROR_CODE_INVALID_TAG;
+    }
+    if ((ret = bb_getUInt8(data, &len)) != 0)
+    {
+        return ret;
+    }
+    // Tag for xDLMS-Initate.response
+    if ((ret = bb_getUInt8(data, &tag)) != 0)
+    {
+        return ret;
+    }
+    #ifndef DLMS_IGNORE_HIGH_GMAC
+    DLMS_SECURITY security;
+    DLMS_SECURITY_SUITE suite;
+    uint64_t invocationCounter;
+
+
+//     if (tag == DLMS_COMMAND_GLO_INITIATE_RESPONSE ||
+//         tag == DLMS_COMMAND_GLO_INITIATE_REQUEST ||
+//         tag == DLMS_COMMAND_DED_INITIATE_RESPONSE ||
+//         tag == DLMS_COMMAND_DED_INITIATE_REQUEST ||
+//         tag == DLMS_COMMAND_GENERAL_GLO_CIPHERING ||
+//         tag == DLMS_COMMAND_GENERAL_DED_CIPHERING)
+//     {
+//         *command = (unsigned char)tag;
+//         --data->position;
+// #ifndef DLMS_IGNORE_MALLOC
+//         if ((ret = cip_decrypt(&settings->cipher,
+//                                settings->sourceSystemTitle,
+//                                &settings->cipher.blockCipherKey,
+//                                data,
+//                                &security,
+//                                &suite,
+//                                &invocationCounter)) != 0)
+//         {
+//             return ret;
+//         }
+// #else
+//         if ((ret = cip_decrypt(&settings->cipher,
+//                                settings->sourceSystemTitle,
+//                                settings->cipher.blockCipherKey,
+//                                data,
+//                                &security,
+//                                &suite,
+//                                &invocationCounter)) != 0)
+//         {
+//             return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
+//         }
+// #endif // DLMS_IGNORE_MALLOC
+
+//         if (settings->expectedSecurityPolicy != 0xFF && security != settings->expectedSecurityPolicy << 4)
+//         {
+//             return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
+//         }
+//         if (settings->expectedSecuritySuite != 0xFF && suite != settings->expectedSecuritySuite)
+//         {
+//             return DLMS_ERROR_CODE_INVALID_SECURITY_SUITE;
+//         }
+// #ifdef DLMS_INVOCATION_COUNTER_VALIDATOR
+//         if (svr_validateInvocationCounter(settings, invocationCounter) != 0)
+//         {
+//             return DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL;
+//         }
+// #else
+//         if (settings->expectedInvocationCounter != NULL)
+//         {
+//             if (invocationCounter < *settings->expectedInvocationCounter)
+//             {
+//                 return DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL;
+//             }
+// #ifdef DLMS_COSEM_INVOCATION_COUNTER_SIZE64
+//             *settings->expectedInvocationCounter = invocationCounter;
+// #else
+//             *settings->expectedInvocationCounter = (uint32_t)(invocationCounter);
+// #endif // DLMS_COSEM_INVOCATION_COUNTER_SIZE64
+//         }
+// #endif // DLMS_INVOCATION_COUNTER_VALIDATOR
+//        // If client system title doesn't match.
+//         if (settings->expectedClientSystemTitle != NULL &&
+//             memcmp(settings->expectedClientSystemTitle, EMPTY_SYSTEM_TITLE, 8) != 0 &&
+//             memcmp(settings->sourceSystemTitle, settings->expectedClientSystemTitle, 8) != 0)
+//         {
+//             return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
+//         }
+
+//         settings->cipher.security = security;
+//         settings->cipher.suite = suite;
+//         if ((ret = bb_getUInt8(data, &tag)) != 0)
+//         {
+//             return ret;
+//         }
+//     }
+
+
+    #endif // DLMS_IGNORE_HIGH_GMAC
+    response = tag == DLMS_COMMAND_INITIATE_RESPONSE;
+    if (response)
+    {
+        // Optional usage field of the negotiated quality of service
+        // component
+        if ((ret = bb_getUInt8(data, &tag)) != 0)
+        {
+            return ret;
+        }
+        if (tag != 0)
+        {
+            if ((ret = bb_getUInt8(data, &settings->qualityOfService)) != 0)
+            {
+                return ret;
+            }
+        }
+    }
+    else if (tag == DLMS_COMMAND_INITIATE_REQUEST)
+    {
+        // Optional usage field of the negotiated quality of service
+        // component
+        if ((ret = bb_getUInt8(data, &tag)) != 0)
+        {
+            return ret;
+        }
+                // Dedicated key.
+        #ifdef DLMS_IGNORE_HIGH_GMAC
+    #else
+        if (tag != 0)
+        {
+            // Return error if ciphering is not used.
+            if (!ciphered || settings->cipher.security != DLMS_SECURITY_AUTHENTICATION_ENCRYPTION)
+            {
+                return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            }
+            if ((ret = bb_getUInt8(data, &len)) != 0)
+            {
+                return ret;
+            }
+            if (len != 16)
+            {
+                return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            }
+            #ifndef DLMS_IGNORE_MALLOC
+                        if (settings->cipher.dedicatedKey == NULL)
+                        {
+                            settings->cipher.dedicatedKey = gxmalloc(sizeof(gxByteBuffer));
+                            BYTE_BUFFER_INIT(settings->cipher.dedicatedKey);
+                        }
+                        else
+                        {
+                            bb_clear(settings->cipher.dedicatedKey);
+                        }
+                        bb_set2(settings->cipher.dedicatedKey, data, data->position, len);
+            #else
+                        hlp_setObjectCount(8, data);
+                        bb_get(data, settings->cipher.dedicatedKey, len);
+            #endif // DLMS_IGNORE_MALLOC
+        }
+        else
+        {
+        #ifndef DLMS_IGNORE_MALLOC
+                    if (settings->cipher.dedicatedKey != NULL)
+                    {
+                        bb_clear(settings->cipher.dedicatedKey);
+                        gxfree(settings->cipher.dedicatedKey);
+                        settings->cipher.dedicatedKey = NULL;
+                    }
+        #else
+                    memset(settings->cipher.dedicatedKey, 0, 8);
+        #endif // DLMS_IGNORE_MALLOC
+                }
+        #endif // DLMS_IGNORE_HIGH_GMAC
+       //  Optional usage field of the negotiated quality of service
+       //  component
+        if ((ret = bb_getUInt8(data, &tag)) != 0)
+        {
+            return ret;
+        }
+        // Skip if used.
+        if (tag != 0)
+        {
+            if ((ret = bb_getUInt8(data, &tag)) != 0)
+            {
+                return ret;
+            }
+        }
+        // Optional usage field of the proposed quality of service component
+        if ((ret = bb_getUInt8(data, &tag)) != 0)
+        {
+            return ret;
+        }
+        if (tag != 0)
+        {
+            if ((ret = bb_getUInt8(data, &settings->qualityOfService)) != 0)
+            {
+                return ret;
+            }
+        }
+    }
+    else
+    {
+        return DLMS_ERROR_CODE_INVALID_TAG;
+    }
+ 
+    if ((ret = bb_getUInt8(data, &ch)) != 0)
+    {
+        return ret;
+    }
+    if (ch < 6)
+    {
+        // Invalid DLMS version number.
+        return DLMS_ERROR_CODE_INVALID_VERSION_NUMBER;
+    }
+  
+
+    // Tag for conformance block
+    if ((ret = bb_getUInt8(data, &tag)) != 0)
+    {
+        return ret;
+    }
+    if (tag != 0x5F)
+    {
+        return DLMS_ERROR_CODE_INVALID_TAG;
+    }
+    // Old Way...
+    tag = data->data[data->position];
+    if (tag == 0x1F)
+    {
+        data->position = (data->position + 1);
+    }
+    if ((ret = bb_getUInt8(data, &len)) != 0)
+    {
+        return ret;
+    }
+    // The number of unused bits in the bit string.
+    if ((ret = bb_getUInt8(data, &tag)) != 0)
+    {
+        return ret;
+    }
+    bitArray ba;
+    ba_attach(&ba, data->data + data->position, 24, 24);
+    data->position += 3;
+    if ((ret = ba_toInteger(&ba, &v)) != 0)
+    {
+        return ret;
+    }
+
+    settings->negotiatedConformance = (DLMS_CONFORMANCE)v;
+
+
+    if ((ret = bb_getUInt16(data, &pduSize)) != 0)
+    {
+        return ret;
+    }
+    settings->maxPduSize = pduSize;
+ 
+    if (response)
+    {
+        // VAA Name
+        uint16_t vaa;
+        if ((ret = bb_getUInt16(data, &vaa)) != 0)
+        {
+            return ret;
+        }
+        if (vaa == 0x0007)
+        {
+            // If LN
+            if (!settings->useLogicalNameReferencing)
+            {
+                // Invalid VAA.
+                return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            }
+        }
+        else if (vaa == 0xFA00)
+        {
+            // If SN
+            if (settings->useLogicalNameReferencing)
+            {
+                // Invalid VAA.
+                return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            }
+        }
+        else
+        {
+            // Unknown VAA.
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+    }
+    return 0;
+}
+
 int apdu_generateAarq(
     dlmsSettings* settings,
     gxByteBuffer* data)
@@ -566,51 +882,72 @@ int apdu_parsePDU(
         }
         switch (tag)
         {
-            //0xA1
-        case BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | (unsigned char)PDU_TYPE_APPLICATION_CONTEXT_NAME:
-        {
-            if ((ret = apdu_parseApplicationContextName(settings, buff, &ciphered)) != 0)
-            {
-                // #ifdef DLMS_DEBUG
-                //                 svr_notifyTrace(GET_STR_FROM_EEPROM("apdu_parseApplicationContextName "), ret);
-                // #endif //DLMS_DEBUG
-                //                 * diagnostic = DLMS_SOURCE_DIAGNOSTIC_APPLICATION_CONTEXT_NAME_NOT_SUPPORTED;
-                //                 *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
-                return 0;
-            }
-            #ifndef DLMS_IGNORE_SERVER
-            if (ciphered)
-            {
-                afu = (DLMS_AFU_MISSING)(DLMS_AFU_MISSING_SENDER_ACSE_REQUIREMENTS | DLMS_AFU_MISSING_MECHANISM_NAME | DLMS_AFU_MISSING_CALLING_AUTHENTICATION_VALUE);
-            }
-            #endif //DLMS_IGNORE_SERVER
-        }
-        break;
-            if (settings->server)
-            {
-                //Ignore if client sends CalledAEQualifier.
-                if (tag != BER_TYPE_OCTET_STRING)
+                //0xA1
+            case BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | (unsigned char)PDU_TYPE_APPLICATION_CONTEXT_NAME:
                 {
-#ifdef DLMS_DEBUG
-                    svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid AE qualifier. "), -1);
-#endif //DLMS_DEBUG
+                    if ((ret = apdu_parseApplicationContextName(settings, buff, &ciphered)) != 0)
+                    {
+                        // #ifdef DLMS_DEBUG
+                        //                 svr_notifyTrace(GET_STR_FROM_EEPROM("apdu_parseApplicationContextName "), ret);
+                        // #endif //DLMS_DEBUG
+                        //                 * diagnostic = DLMS_SOURCE_DIAGNOSTIC_APPLICATION_CONTEXT_NAME_NOT_SUPPORTED;
+                        //                 *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
+                        return 0;
+                    }
+                    #ifndef DLMS_IGNORE_SERVER
+                    if (ciphered)
+                    {
+                        afu = (DLMS_AFU_MISSING)(DLMS_AFU_MISSING_SENDER_ACSE_REQUIREMENTS | DLMS_AFU_MISSING_MECHANISM_NAME | DLMS_AFU_MISSING_CALLING_AUTHENTICATION_VALUE);
+                    }
+                    #endif //DLMS_IGNORE_SERVER
+                }
+                break;
+                // 0xA4 Result
+            case BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | (unsigned char)PDU_TYPE_USER_INFORMATION:
+                // Check result component. Some meters are returning invalid user-information if connection failed.
+                if (*result != DLMS_ASSOCIATION_RESULT_ACCEPTED && *diagnostic != DLMS_SOURCE_DIAGNOSTIC_NONE)
+                {
+                    if ((ret = apdu_handleResultComponent(*diagnostic)) != 0)
+                    {
+                    #ifdef DLMS_DEBUG
+                                        svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid result component. "), ret);
+                    #endif // DLMS_DEBUG
+                    }
+                    return ret;
+                }
+                if ((ret = apdu_parseUserInformation(settings, buff, ciphered, command)) != 0)
+                {
+                    printf("reached apdu.parseUserInformation");
+                }
+                break;
+            case BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | (unsigned char)PDU_TYPE_CALLED_AP_TITLE:
+                // Get len.
+                if ((ret = bb_getUInt8(buff, &len)) != 0)
+                {
+                    #ifdef DLMS_DEBUG
+                        svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid AP title "), -1);
+                    #endif // DLMS_DEBUG
+                        break;
+                }
+                if (len != 3)
+                {
                     ret = DLMS_ERROR_CODE_INVALID_TAG;
                     break;
                 }
-                buff->position += len;
-            }
-            else
-            {
-                // Result source diagnostic component.
+                // Choice for result.
                 if ((ret = bb_getUInt8(buff, &tag)) != 0)
                 {
-                    break;
+                    #ifdef DLMS_DEBUG
+                        svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid AP title "), -1);
+                    #endif // DLMS_DEBUG
+                        break;
                 }
                 if (tag != BER_TYPE_INTEGER)
                 {
                     ret = DLMS_ERROR_CODE_INVALID_TAG;
                     break;
                 }
+                // Get len.
                 if ((ret = bb_getUInt8(buff, &len)) != 0)
                 {
                     break;
@@ -624,25 +961,42 @@ int apdu_parsePDU(
                 {
                     break;
                 }
-                *diagnostic = (DLMS_SOURCE_DIAGNOSTIC)tag;
-            }
-            break;
-            // 0xA4 Result
-             case BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | (unsigned char)PDU_TYPE_USER_INFORMATION:
-            // Check result component. Some meters are returning invalid user-information if connection failed.
-            if (*result != DLMS_ASSOCIATION_RESULT_ACCEPTED && *diagnostic != DLMS_SOURCE_DIAGNOSTIC_NONE)
-            {
-                if ((ret = apdu_handleResultComponent(*diagnostic)) != 0)
-                {
-#ifdef DLMS_DEBUG
-                    svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid result component. "), ret);
-#endif // DLMS_DEBUG
-                }
-                return ret;
-            }
-            break;
-     
+                *result = (DLMS_ASSOCIATION_RESULT)tag;
+                        
+                break;
+            case BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | (unsigned char)PDU_TYPE_CALLED_AE_QUALIFIER:
+                 if ((ret = bb_getUInt8(buff, &len)) != 0 ||
+                    (ret = bb_getUInt8(buff, &tag)) != 0 ||
+                    (ret = bb_getUInt8(buff, &len)) != 0)
+                    {
+                        break;
+                    }
+                    // Result source diagnostic component.
+                    if ((ret = bb_getUInt8(buff, &tag)) != 0)
+                    {
+                        break;
+                    }
+                    if (tag != BER_TYPE_INTEGER)
+                    {
+                        ret = DLMS_ERROR_CODE_INVALID_TAG;
+                        break;
+                    }
+                    if ((ret = bb_getUInt8(buff, &len)) != 0)
+                    {
+                        break;
+                    }
+                    if (len != 1)
+                    {
+                        ret = DLMS_ERROR_CODE_INVALID_TAG;
+                        break;
+                    }
+                    if ((ret = bb_getUInt8(buff, &tag)) != 0)
+                    {
+                        break;
+                    }
+                    *diagnostic = (DLMS_SOURCE_DIAGNOSTIC)tag;
+                    break;
+        }
     }
-}
     return ret;
 }

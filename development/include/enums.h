@@ -260,12 +260,12 @@ typedef enum
         // /*
         // * AP-title OPTIONAL
         // */
-        // PDU_TYPE_CALLED_AP_TITLE = 2,
+        PDU_TYPE_CALLED_AP_TITLE = 2,
 
         // /*
         // * AE-qualifier OPTIONAL.
         // */
-        // PDU_TYPE_CALLED_AE_QUALIFIER = 3,
+        PDU_TYPE_CALLED_AE_QUALIFIER = 3,
 
         // /*
         // * AP-invocation-identifier OPTIONAL.
