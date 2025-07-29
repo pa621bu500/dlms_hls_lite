@@ -20,6 +20,10 @@ unsigned char* value,
 uint16_t count,
 uint16_t capacity);
 
+int ba_toInteger(
+bitArray* arr,
+uint32_t* value);
+
 
 
 #endif
