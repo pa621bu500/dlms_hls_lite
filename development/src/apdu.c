@@ -396,6 +396,28 @@ int apdu_parseUserInformation(
     return 0;
 }
 
+int apdu_handleResultComponent(unsigned char value)
+{
+    int ret;
+    switch (value)
+    {
+        case DLMS_SOURCE_DIAGNOSTIC_NO_REASON_GIVEN:
+            ret = DLMS_ERROR_CODE_NO_REASON_GIVEN;
+            break;
+        case DLMS_SOURCE_DIAGNOSTIC_APPLICATION_CONTEXT_NAME_NOT_SUPPORTED:
+            ret = DLMS_ERROR_CODE_APPLICATION_CONTEXT_NAME_NOT_SUPPORTED;
+            break;
+        case DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_FAILURE:
+            ret = DLMS_ERROR_CODE_AUTHENTICATION_FAILURE;
+            break;
+        default:
+            // OK.
+            ret = 0;
+            break;
+    }
+    return ret;
+}
+
 int apdu_generateAarq(
     dlmsSettings* settings,
     gxByteBuffer* data)
@@ -806,34 +828,6 @@ int apdu_parseApplicationContextName(
     return DLMS_ERROR_CODE_FALSE;
 }
 
-int apdu_handleResultComponent(unsigned char value)
-{
-    int ret;
-    switch (value)
-    {
-    // case DLMS_SOURCE_DIAGNOSTIC_NO_REASON_GIVEN:
-    //     ret = DLMS_ERROR_CODE_NO_REASON_GIVEN;
-    //     break;
-    // case DLMS_SOURCE_DIAGNOSTIC_APPLICATION_CONTEXT_NAME_NOT_SUPPORTED:
-    //     ret = DLMS_ERROR_CODE_APPLICATION_CONTEXT_NAME_NOT_SUPPORTED;
-    //     break;
-    // case DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_MECHANISM_NAME_NOT_RECOGNISED:
-    //     ret = DLMS_ERROR_CODE_AUTHENTICATION_MECHANISM_NAME_NOT_RECOGNISED;
-    //     break;
-    // case DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_MECHANISM_NAME_REQUIRED:
-    //     ret = DLMS_ERROR_CODE_AUTHENTICATION_MECHANISM_NAME_REQUIRED;
-    //     break;
-    // case DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_FAILURE:
-    //     ret = DLMS_ERROR_CODE_AUTHENTICATION_FAILURE;
-    //     break;
-    default:
-        // OK.
-        ret = 0;
-        break;
-    }
-    return ret;
-}
-
 int apdu_parsePDU(
     dlmsSettings* settings,
     gxByteBuffer* buff,
@@ -997,6 +991,40 @@ int apdu_parsePDU(
                     *diagnostic = (DLMS_SOURCE_DIAGNOSTIC)tag;
                     break;
         }
+    }
+    if (ret == 0)
+    {
+        #ifndef DLMS_IGNORE_SERVER
+            if (settings->server && afu != 0 &&
+                *result == DLMS_ASSOCIATION_RESULT_ACCEPTED &&
+                !(
+                    afu == DLMS_AFU_MISSING_CALLING_AUTHENTICATION_VALUE &&
+                    settings->authentication == DLMS_AUTHENTICATION_NONE))
+                {
+                    *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
+                    *diagnostic = DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_FAILURE;
+                    return 0;
+                }
+                #endif // DLMS_IGNORE_SERVER
+                    // All meters don't send user-information if connection is failed.
+                    // For this reason result component is check again.
+                if ((ret = apdu_handleResultComponent(*diagnostic)) != 0)
+                {
+                    #ifdef DLMS_DEBUG
+                                svr_notifyTrace(GET_STR_FROM_EEPROM("handleResultComponent."), ret);
+                    #endif // DLMS_DEBUG
+                }
+                #ifndef DLMS_IGNORE_HIGH_GMAC
+                // Check that user is not trying to connect without ciphered connection.
+                if (ret == 0 && settings->expectedSecurityPolicy != 0xFF)
+                {
+                    if (settings->cipher.security != settings->expectedSecurityPolicy << 4)
+                    {
+                        return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
+                    }
+                }
+                #endif // DLMS_IGNORE_HIGH_GMAC
+
     }
     return ret;
 }

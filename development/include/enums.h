@@ -165,9 +165,6 @@ typedef enum
 
 typedef enum
     {
-        /*
-        * No command to execute.
-        */
         DLMS_COMMAND_NONE = 0,
         DLMS_ACTION_COMMAND_TYPE_NORMAL = 1,
         DLMS_COMMAND_INITIATE_REQUEST = 0x1,
@@ -185,34 +182,26 @@ typedef enum
         DLMS_COMMAND_GLO_SET_REQUEST = 0xC9,
         DLMS_COMMAND_DATA_NOTIFICATION = 0x0F,
         DLMS_COMMAND_EVENT_NOTIFICATION = 0xC2,
-          DLMS_COMMAND_METHOD_REQUEST = 0xC3,
-             DLMS_COMMAND_GET_REQUEST = 0xC0,
+        DLMS_COMMAND_METHOD_REQUEST = 0xC3,
+        DLMS_COMMAND_GET_REQUEST = 0xC0,
         DLMS_COMMAND_UA = 0x73,
         DLMS_COMMAND_DISCONNECT_MODE = 0x1f,
-         DLMS_COMMAND_REJECTED = 0x97,
-         DLMS_COMMAND_GENERAL_BLOCK_TRANSFER = 0xE0,
+        DLMS_COMMAND_REJECTED = 0x97,
+        DLMS_COMMAND_GENERAL_BLOCK_TRANSFER = 0xE0,
     } DLMS_COMMAND;
 
-        typedef enum
+    typedef enum
     {
-        /*
-        * Normal Get.
-        */
         DLMS_GET_COMMAND_TYPE_NORMAL = 1,
-
     } DLMS_GET_COMMAND_TYPE;
 
-        typedef enum
+    typedef enum
     {
-        /*
-        * Normal Set.
-        */
         DLMS_SET_COMMAND_TYPE_NORMAL = 1,
-
     } DLMS_SET_COMMAND_TYPE;
 
 
-       typedef enum {
+    typedef enum {
         //Connection is not made for the meter.
         DLMS_CONNECTION_STATE_NONE = 0,
         //Connection is made for DLMS level.
@@ -228,19 +217,22 @@ typedef enum
          BER_TYPE_CONTEXT = 0x80,
         BER_TYPE_OBJECT_IDENTIFIER = 0x6,
         BER_TYPE_OCTET_STRING = 0x4,
-        BER_TYPE_INTEGER,
-    };
+         BER_TYPE_INTEGER = 0x2,
+    }BER_TYPE;
 
-        typedef enum
+    typedef enum
     {
         DLMS_ASSOCIATION_RESULT_ACCEPTED = 0,
         DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED = 1,
         DLMS_ASSOCIATION_RESULT_TRANSIENT_REJECTED = 2
     } DLMS_ASSOCIATION_RESULT;
 
-      typedef enum
+    typedef enum
     {
         DLMS_SOURCE_DIAGNOSTIC_NONE = 0,
+        DLMS_SOURCE_DIAGNOSTIC_NO_REASON_GIVEN = 1,
+        DLMS_SOURCE_DIAGNOSTIC_APPLICATION_CONTEXT_NAME_NOT_SUPPORTED = 2,
+        DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_FAILURE = 13,
         DLMS_SOURCE_DIAGNOSTIC_AUTHENTICATION_REQUIRED = 14
     } DLMS_SOURCE_DIAGNOSTIC;
 
