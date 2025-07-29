@@ -362,7 +362,8 @@ int readSerialPort(
          printf("Failed to Open port\n");
          return 1;
     }
-
+    com_close(connection);
+    con_close(connection);
     return ret;
 }
 

@@ -202,7 +202,14 @@ typedef enum
 
     } DLMS_GET_COMMAND_TYPE;
 
-    
+        typedef enum
+    {
+        /*
+        * Normal Set.
+        */
+        DLMS_SET_COMMAND_TYPE_NORMAL = 1,
+
+    } DLMS_SET_COMMAND_TYPE;
 
 
        typedef enum {

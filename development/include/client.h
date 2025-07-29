@@ -16,6 +16,11 @@ int cl_getData2(
     gxReplyData *notify,
     unsigned char *isNotify);
 
+int cl_releaseRequest2(
+dlmsSettings* settings,
+message* packets,
+unsigned char useProtectedRelease);
+
 int cl_parseUAResponse(
     dlmsSettings *settings,
     gxByteBuffer *data);

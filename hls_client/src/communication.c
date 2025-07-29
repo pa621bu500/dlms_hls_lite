@@ -351,6 +351,62 @@ int com_readDataBlock(
     return ret;
 }
 
+int com_close(
+    connection *connection)
+{
+    int ret = DLMS_ERROR_CODE_OK;
+    gxReplyData reply;
+    message msg;
+    // If client is closed.
+    if (!connection->settings.server)
+    {
+        reply_init(&reply);
+        mes_init(&msg);
+        if ((ret = cl_releaseRequest2(&connection->settings, &msg,
+                                      connection->settings.cipher.security != DLMS_SECURITY_NONE)) != 0 ||
+            (ret = com_readDataBlock(connection, &msg, &reply)) != 0)
+        {
+            // Show error but continue close.
+            printf("Release failed.");
+        }
+        reply_clear(&reply);
+        mes_clear(&msg);
+
+        if ((ret = cl_disconnectRequest(&connection->settings, &msg)) != 0 ||
+            (ret = com_readDataBlock(connection, &msg, &reply)) != 0)
+        {
+            // Show error but continue close.
+            printf("Close failed.");
+        }
+        reply_clear(&reply);
+        mes_clear(&msg);
+    }
+    if (connection->socket != -1)
+    {
+        connection->closing = 1;
+#if defined(_WIN32) || defined(_WIN64) // Windows includes
+        closesocket(connection->socket);
+#else
+        close(connection->socket);
+#endif
+        connection->socket = -1;
+    }
+    else if (connection->comPort != INVALID_HANDLE_VALUE)
+    {
+#if defined(_WIN32) || defined(_WIN64) // Windows includes
+        CloseHandle(connection->comPort);
+        connection->comPort = INVALID_HANDLE_VALUE;
+        CloseHandle(connection->osReader.hEvent);
+        CloseHandle(connection->osWrite.hEvent);
+#else
+        close(connection->comPort);
+#endif
+        connection->comPort = INVALID_HANDLE_VALUE;
+    }
+    cl_clear(&connection->settings);
+    return ret;
+}
+
 int com_updateInvocationCounter(
     connection *connection,
     const char *invocationCounter)
