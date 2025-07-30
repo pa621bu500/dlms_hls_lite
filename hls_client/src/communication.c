@@ -680,12 +680,12 @@ int com_read(
     gxReplyData reply;
     mes_init(&data);
     reply_init(&reply);
-    // if ((ret = cl_read(&connection->settings, object, attributeOrdinal, &data)) != 0 ||
-    //     (ret = com_readDataBlock(connection, &data, &reply)) != 0 ||
-    //     (ret = cl_updateValue(&connection->settings, object, attributeOrdinal, &reply.dataValue)) != 0)
-    // {
-    //     printf("ReadObject failed");
-    // }
+    if ((ret = cl_read(&connection->settings, object, attributeOrdinal, &data)) != 0 ||
+        (ret = com_readDataBlock(connection, &data, &reply)) != 0 ||
+        (ret = cl_updateValue(&connection->settings, object, attributeOrdinal, &reply.dataValue)) != 0)
+    {
+        printf("ReadObject failed");
+    }
     mes_clear(&data);
     reply_clear(&reply);
     return ret;

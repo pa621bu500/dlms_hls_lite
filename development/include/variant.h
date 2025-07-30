@@ -21,11 +21,13 @@
         DLMS_DATA_TYPE vt;
         union
         {
+            int64_t llVal;
             gxByteBuffer* byteArr;
             gxByteBuffer* strUtfVal;
             gxByteBuffer* strVal;
             uint32_t ulVal;
             variantArray* Arr;
+            void* pVal;
             // bitArray* bitArr;
         };
     } dlmsVARIANT;
@@ -45,5 +47,10 @@ DLMS_DATA_TYPE newType);
 
 int var_toInteger(
     dlmsVARIANT* data);
+
+
+int var_copy(
+dlmsVARIANT* target,
+dlmsVARIANT* source);
 
 #endif

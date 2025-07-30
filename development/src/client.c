@@ -612,22 +612,23 @@ int cl_readLN(
     bb_clear(pdu);
     return ret;
 }
-// int cl_updateValue(
-//     dlmsSettings* settings,
-//     gxObject* target,
-//     unsigned char attributeIndex,
-//     dlmsVARIANT* value)
-// {
-//     gxValueEventArg e;
-//     if (target == NULL)
-//     {
-//         return DLMS_ERROR_CODE_INVALID_PARAMETER;
-//     }
-//     e.target = target;
-//     e.index = attributeIndex;
-//     e.value = *value;
-//     return cosem_setValue(settings, &e);
-// }
+
+int cl_updateValue(
+    dlmsSettings* settings,
+    gxObject* target,
+    unsigned char attributeIndex,
+    dlmsVARIANT* value)
+{
+    gxValueEventArg e;
+    if (target == NULL)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    e.target = target;
+    e.index = attributeIndex;
+    e.value = *value;
+    return cosem_setValue(settings, &e);
+}
 
 int cl_read(
     dlmsSettings *settings,

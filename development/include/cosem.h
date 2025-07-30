@@ -3,6 +3,7 @@
 
 #include "gxobjects.h"
 #include "dlmssettings.h"
+
   int cosem_init(
       gxObject* object,
       DLMS_OBJECT_TYPE type,
@@ -24,4 +25,7 @@
       const uint16_t expectedSize,
       DLMS_OBJECT_TYPE type,
       const unsigned char* ln);
+
+
+
       #endif
