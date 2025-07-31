@@ -366,33 +366,28 @@ int cip_crypt(
         {
             ++settings->invocationCounter;
         }
-//         if (ret == 0 && encrypt && type == DLMS_COUNT_TYPE_PACKET)
-//         {
-//             //Nonse must be 20 bytes because it's used later.
-// #ifdef GX_DLMS_MICROCONTROLLER
-//             static unsigned char NONSE[20] = { 0 };
-// #else
-//             unsigned char NONSE[20] = { 0 };
-// #endif //GX_DLMS_MICROCONTROLLER
-//             gxByteBuffer nonse;
-//             bb_attach(&nonse, NONSE, 0, sizeof(NONSE));
-//             if ((ret = bb_setUInt8(&nonse, tag)) == 0)
-//             {
-//                 if (tag == DLMS_COMMAND_GENERAL_GLO_CIPHERING ||
-//                     tag == DLMS_COMMAND_GENERAL_DED_CIPHERING)
-//                 {
-//                     hlp_setObjectCount(8, &nonse);
-//                     bb_set(&nonse, systemTitle, 8);
-//                 }
-//                 tag = (settings->broadcast ? 0x40 : 0) | settings->security | settings->suite;
-//                 if ((ret = hlp_setObjectCount(5 + input->size, &nonse)) == 0 &&
-//                     (ret = bb_setUInt8(&nonse, tag)) == 0 &&
-//                     (ret = bb_setUInt32(&nonse, frameCounter)) == 0 &&
-//                     (ret = bb_insert(nonse.data, nonse.size, input, 0)) == 0)
-//                 {
-//                 }
-//             }
-//         }
+        if (ret == 0 && encrypt && type == DLMS_COUNT_TYPE_PACKET)
+        {
+            //Nonse must be 20 bytes because it's used later.
+#ifdef GX_DLMS_MICROCONTROLLER
+            static unsigned char NONSE[20] = { 0 };
+#else
+            unsigned char NONSE[20] = { 0 };
+#endif //GX_DLMS_MICROCONTROLLER
+            gxByteBuffer nonse;
+            bb_attach(&nonse, NONSE, 0, sizeof(NONSE));
+            if ((ret = bb_setUInt8(&nonse, tag)) == 0)
+            {
+                
+                tag = (settings->broadcast ? 0x40 : 0) | settings->security | settings->suite;
+                if ((ret = hlp_setObjectCount(5 + input->size, &nonse)) == 0 &&
+                    (ret = bb_setUInt8(&nonse, tag)) == 0 &&
+                    (ret = bb_setUInt32(&nonse, frameCounter)) == 0 &&
+                    (ret = bb_insert(nonse.data, nonse.size, input, 0)) == 0)
+                {
+                }
+            }
+        }
     }
     return ret;
 }
