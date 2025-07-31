@@ -6,7 +6,13 @@
                     ((uint32_t)(pt)[1] << 16) | \
                     ((uint32_t)(pt)[2] <<  8) | \
                     ((uint32_t)(pt)[3]))
-    
+
+#define PUT32(ct, st) { \
+(ct)[0] = (unsigned char)((st) >> 24); \
+(ct)[1] = (unsigned char)((st) >> 16); \
+(ct)[2] = (unsigned char)((st) >>  8); \
+(ct)[3] = (unsigned char)(st); }
+
 int hlp_hexToBytes(
 const char* str,
 unsigned char** arr,

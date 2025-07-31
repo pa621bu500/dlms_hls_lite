@@ -278,54 +278,40 @@ int bb_addString(
     return 0;
 }
 
-// int bb_capacity(gxByteBuffer* arr, uint32_t capacity)
-// {
-//     // Only needed for dynamic memory platforms
-//     if (!bb_isAttached(arr))
-//     {
-//         if (capacity == 0)
-//         {
-//             if (arr->data != NULL)
-//             {
-//                 gxfree(arr->data);
-//                 arr->data = NULL;
-//                 arr->size = 0;
-//             }
-//         }
-//         else
-//         {
-//             if (arr->capacity == 0)
-//             {
-//                 arr->data = (unsigned char*)gxmalloc(capacity);
-//                 if (arr->data == NULL)
-//                 {
-//                     return DLMS_ERROR_CODE_OUTOFMEMORY;
-//                 }
-//             }
-//             else
-//             {
-//                 unsigned char* old = arr->data;
-//                 arr->data = (unsigned char*)gxrealloc(arr->data, capacity);
-//                 if (arr->data == NULL)
-//                 {
-//                     arr->data = old;
-//                     return DLMS_ERROR_CODE_OUTOFMEMORY;
-//                 }
-//             }
-//             if (arr->size > capacity)
-//             {
-//                 arr->size = capacity;
-//             }
-//         }
-//         arr->capacity = capacity;
-//     }
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+int bb_setUInt32ByIndex(
+    gxByteBuffer* arr,
+    uint32_t index,
+    uint32_t item)
+#else
+int bb_setUInt32ByIndex(
+    gxByteBuffer* arr,
+    uint16_t index,
+    uint32_t item)
+#endif //defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+{
+    int ret = bb_allocate(arr, index, 4);
+    if (ret == 0)
+    {
+        PUT32(arr->data + index, item);
+    }
+    return ret;
+}
 
-//     if (bb_getCapacity(arr) < capacity)
-//     {
-//         return DLMS_ERROR_CODE_OUTOFMEMORY;
-//     }
-//     return DLMS_ERROR_CODE_OK;
-// }
+
+int bb_setUInt32(
+    gxByteBuffer* arr,
+    uint32_t item)
+{
+    int ret = bb_setUInt32ByIndex(arr, arr->size, item);
+    if (ret == 0)
+    {
+        arr->size += 4;
+    }
+    return ret;
+}
+
+
 
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 int bb_capacity(

@@ -31,21 +31,21 @@ int apdu_getAuthenticationString(
     #endif //DLMS_IGNORE_HIGH_GMAC
             )
     {
-        // unsigned char p[] = { 0x60, 0x85, 0x74, 0x05, 0x08, 0x02 };
-        // // Add sender ACSE-requirements field component.
-        // if ((ret = bb_setUInt8(data, (uint16_t)BER_TYPE_CONTEXT | (char)PDU_TYPE_SENDER_ACSE_REQUIREMENTS)) != 0 ||
-        //     (ret = bb_setUInt8(data, 2)) != 0 ||
-        //     (ret = bb_setUInt8(data, BER_TYPE_BIT_STRING | BER_TYPE_OCTET_STRING)) != 0 ||
-        //     (ret = bb_setUInt8(data, 0x80)) != 0 ||
-        //     (ret = bb_setUInt8(data, (uint16_t)BER_TYPE_CONTEXT | (char)PDU_TYPE_MECHANISM_NAME)) != 0 ||
-        //     // Len
-        //     (ret = bb_setUInt8(data, 7)) != 0 ||
-        //     // OBJECT IDENTIFIER
-        //     (ret = bb_set(data, p, 6)) != 0 ||
-        //     (ret = bb_setUInt8(data, settings->authentication)) != 0)
-        // {
-        //     //Error code is returned at the end of the function.
-        // }
+        unsigned char p[] = { 0x60, 0x85, 0x74, 0x05, 0x08, 0x02 };
+        // Add sender ACSE-requirements field component.
+        if ((ret = bb_setUInt8(data, (uint16_t)BER_TYPE_CONTEXT | (char)PDU_TYPE_SENDER_ACSE_REQUIREMENTS)) != 0 ||
+            (ret = bb_setUInt8(data, 2)) != 0 ||
+            (ret = bb_setUInt8(data, BER_TYPE_BIT_STRING | BER_TYPE_OCTET_STRING)) != 0 ||
+            (ret = bb_setUInt8(data, 0x80)) != 0 ||
+            (ret = bb_setUInt8(data, (uint16_t)BER_TYPE_CONTEXT | (char)PDU_TYPE_MECHANISM_NAME)) != 0 ||
+            // Len
+            (ret = bb_setUInt8(data, 7)) != 0 ||
+            // OBJECT IDENTIFIER
+            (ret = bb_set(data, p, 6)) != 0 ||
+            (ret = bb_setUInt8(data, settings->authentication)) != 0)
+        {
+            //Error code is returned at the end of the function.
+        }
     }
     // If authentication is used.
     if (settings->authentication != DLMS_AUTHENTICATION_NONE)
@@ -581,27 +581,16 @@ int apdu_generateUserInformation(
         {
             return ret;
         }
-#ifndef DLMS_IGNORE_MALLOC
-        // ret = cip_encrypt(
-        //     &settings->cipher,
-        //     settings->cipher.security,
-        //     DLMS_COUNT_TYPE_PACKET,
-        //     settings->cipher.invocationCounter,
-        //     DLMS_COMMAND_GLO_INITIATE_REQUEST,
-        //     settings->cipher.systemTitle.data,
-        //     &settings->cipher.blockCipherKey,
-        //     &crypted);
-#else
+
         ret = cip_encrypt(
             &settings->cipher,
             settings->cipher.security,
             DLMS_COUNT_TYPE_PACKET,
             settings->cipher.invocationCounter,
             DLMS_COMMAND_GLO_INITIATE_REQUEST,
-            settings->cipher.systemTitle,
-            settings->cipher.blockCipherKey,
+            settings->cipher.systemTitle.data,
+            &settings->cipher.blockCipherKey,
             &crypted);
-#endif //DLMS_IGNORE_MALLOC
         if (ret == 0)
         {
             // Length for AARQ user field

@@ -212,8 +212,18 @@ typedef enum
 
     }DLMS_CONNECTION_STATE;
 
+
     typedef enum
     {
+        /*AES 128 is used.*/
+        DLMS_AES_128,
+        /*AES 256 is used.*/
+        DLMS_AES_256
+    }DLMS_AES;
+
+    typedef enum
+    {
+          BER_TYPE_BIT_STRING = 0x3,
          BER_TYPE_APPLICATION = 0x40,
          BER_TYPE_CONSTRUCTED = 0x20,
          BER_TYPE_CONTEXT = 0x80,
@@ -294,13 +304,13 @@ typedef enum
         // /*
         // * The following field shall not be present if only the kernel is used.
         // */
-        // PDU_TYPE_SENDER_ACSE_REQUIREMENTS = 10,
+        PDU_TYPE_SENDER_ACSE_REQUIREMENTS = 10,
 
         // /*
         // * The following field shall only be present if the authentication
         // * functional unit is selected.
         // */
-        // PDU_TYPE_MECHANISM_NAME = 11,
+        PDU_TYPE_MECHANISM_NAME = 11,
 
         // /*
         // * The following field shall only be present if the authentication

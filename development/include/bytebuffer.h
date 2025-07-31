@@ -7,44 +7,43 @@
 typedef struct
 {
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
-        unsigned char *data;
-        uint32_t capacity;
-        uint32_t size;
-        uint32_t position;
+    unsigned char *data;
+    uint32_t capacity;
+    uint32_t size;
+    uint32_t position;
 #else
-        unsigned char *data;
-        uint16_t capacity;
-        uint16_t size;
-        uint16_t position;
+    unsigned char *data;
+    uint16_t capacity;
+    uint16_t size;
+    uint16_t position;
 #endif
 } gxByteBuffer;
 
-
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
-    unsigned char bb_compare(
-        gxByteBuffer* bb,
-        unsigned char* buff,
-        uint32_t length);
+unsigned char bb_compare(
+    gxByteBuffer *bb,
+    unsigned char *buff,
+    uint32_t length);
 #else
-    unsigned char bb_compare(
-        gxByteBuffer* bb,
-        unsigned char* buff,
-        uint16_t length);
+unsigned char bb_compare(
+    gxByteBuffer *bb,
+    unsigned char *buff,
+    uint16_t length);
 #endif
 
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
-    int bb_insert(
-        const unsigned char* src,
-        uint32_t count,
-        gxByteBuffer* target,
-        uint32_t index);
+int bb_insert(
+    const unsigned char *src,
+    uint32_t count,
+    gxByteBuffer *target,
+    uint32_t index);
 
 #else
-    int bb_insert(
-        const unsigned char* src,
-        uint16_t count,
-        gxByteBuffer* target,
-        uint16_t index);
+int bb_insert(
+    const unsigned char *src,
+    uint16_t count,
+    gxByteBuffer *target,
+    uint16_t index);
 #endif
 
 char bb_isAttached(
@@ -76,6 +75,15 @@ int bb_getUInt16(
 int bb_getUInt32(
     gxByteBuffer *bb,
     uint32_t *value);
+
+int bb_setUInt32(
+    gxByteBuffer *bb,
+    uint32_t item);
+
+int bb_setUInt32ByIndex(
+    gxByteBuffer *arr,
+    uint32_t index,
+    uint32_t item);
 
 int bb_getUInt16ByIndex(
     gxByteBuffer *bb,
