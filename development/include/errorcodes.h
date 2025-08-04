@@ -74,7 +74,7 @@ typedef enum
     // // Access Error : No Long Set Or Write In Progress.
     // DLMS_ERROR_CODE_NO_LONG_SET_OR_WRITE_IN_PROGRESS = 18,
     // // Access Error : Data Block Number Invalid.
-    // DLMS_ERROR_CODE_DATA_BLOCK_NUMBER_INVALID = 19,
+    DLMS_ERROR_CODE_DATA_BLOCK_NUMBER_INVALID = 19,
     // // Access Error : Other Reason.
     // DLMS_ERROR_CODE_OTHER_REASON = 250,
     // DLMS Standard error codes end here.
@@ -138,7 +138,7 @@ typedef enum
     // // Invalid frame number.
     // DLMS_ERROR_CODE_INVALID_FRAME_NUMBER,
     // DLMS_ERROR_CODE_INVALID_DATE_TIME,
-    // DLMS_ERROR_CODE_INVALID_INVOKE_ID,
+    DLMS_ERROR_CODE_INVALID_INVOKE_ID,
     // // Invocation counter value is too small.
     // DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL,
     // // Client try to connect with wrong security.

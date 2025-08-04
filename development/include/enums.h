@@ -120,9 +120,10 @@ typedef enum tagDLMS_OBJECT_TYPE
 typedef enum
     {
         DLMS_DATA_TYPE_NONE = 0,
-        // DLMS_DATA_TYPE_ARRAY = 1,
-        // DLMS_DATA_TYPE_STRUCTURE = 2,
+        DLMS_DATA_TYPE_ARRAY = 1,
+        DLMS_DATA_TYPE_STRUCTURE = 2,
         DLMS_DATA_TYPE_BIT_STRING = 4,
+        DLMS_DATA_TYPE_UINT32 = 6,
         DLMS_DATA_TYPE_OCTET_STRING = 9,
         DLMS_DATA_TYPE_STRING = 10,
         DLMS_DATA_TYPE_INT8 = 15,

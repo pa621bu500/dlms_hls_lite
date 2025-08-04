@@ -4,6 +4,8 @@
 #include "../include/errorcodes.h"
 #include "../include/gxmem.h"
 #include "../include/helpers.h"
+#include "../include/variant.h"
+#include "../include/datainfo.h"
 #include <assert.h>
 #include <string.h>
 
@@ -15,6 +17,27 @@ int BYTE_BUFFER_INIT(
     arr->position = 0;
     arr->size = 0;
     return 0;
+}
+
+
+int getUInt32(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
+{
+    int ret;
+    // If there is not enough data available.
+    if (buff->size - buff->position < 4)
+    {
+        info->complete = 0;
+        return 0;
+    }
+    if ((value->vt & DLMS_DATA_TYPE_BYREF) == 0)
+    {
+        value->vt = DLMS_DATA_TYPE_UINT32;
+    }
+    if ((ret = bb_getUInt32(buff, (value->vt & DLMS_DATA_TYPE_BYREF) == 0 ? &value->ulVal : value->pulVal)) != 0)
+    {
+        return ret;
+    }
+    return DLMS_ERROR_CODE_OK;
 }
 
 char bb_isAttached(gxByteBuffer *arr)

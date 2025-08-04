@@ -6,6 +6,13 @@
 #include "bytebuffer.h"
 #include <stdint.h>
 #include "bitarray.h"
+
+
+
+
+
+
+
    typedef struct
     {
 #ifdef DLMS_IGNORE_MALLOC
@@ -28,10 +35,12 @@
             uint32_t ulVal;
             variantArray* Arr;
             void* pVal;
+            uint32_t* pulVal;
             // bitArray* bitArr;
         };
     } dlmsVARIANT;
 
+typedef dlmsVARIANT* dlmsVARIANT_PTR;
 
 
 int var_init(
