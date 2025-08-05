@@ -23,21 +23,56 @@
         uint16_t capacity;
         uint16_t size;
     } variantArray;
- typedef struct tagdlmsVARIANT
+
+
+  typedef struct tagdlmsVARIANT
     {
         DLMS_DATA_TYPE vt;
         union
         {
+            unsigned char bVal;
+            signed char cVal;
+            int16_t iVal;
+            int32_t lVal;
             int64_t llVal;
-            gxByteBuffer* byteArr;
-            gxByteBuffer* strUtfVal;
-            gxByteBuffer* strVal;
+#ifndef DLMS_IGNORE_FLOAT32
+            float fltVal;
+#endif //DLMS_IGNORE_FLOAT32
+#ifndef DLMS_IGNORE_FLOAT64
+            double dblVal;
+#endif //DLMS_IGNORE_FLOAT64
+            unsigned char boolVal;
+            uint16_t uiVal;
             uint32_t ulVal;
+            uint64_t ullVal;
+#ifndef DLMS_IGNORE_MALLOC
+            gxByteBuffer* strVal;
+            gxByteBuffer* strUtfVal;
+#endif //DLMS_IGNORE_MALLOC
             variantArray* Arr;
-            void* pVal;
+            gxByteBuffer* byteArr;
+            bitArray* bitArr;
+            unsigned char* pbVal;
+            signed char* pcVal;
+            int16_t* piVal;
+            int32_t* plVal;
+            int64_t* pllVal;
+#ifndef DLMS_IGNORE_FLOAT32
+            float* pfltVal;
+#endif //DLMS_IGNORE_FLOAT32
+#ifndef DLMS_IGNORE_FLOAT64
+            double* pdblVal;
+#endif //DLMS_IGNORE_FLOAT64
+            unsigned char* pboolVal;
+            uint16_t* puiVal;
             uint32_t* pulVal;
-            // bitArray* bitArr;
+            uint64_t* pullVal;
+            void* pVal;
         };
+#ifdef DLMS_IGNORE_MALLOC
+        uint16_t size;
+        uint16_t capacity;
+#endif //DLMS_IGNORE_MALLOC
     } dlmsVARIANT;
 
 typedef dlmsVARIANT* dlmsVARIANT_PTR;

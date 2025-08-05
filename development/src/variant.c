@@ -1,12 +1,12 @@
 #include "../include/variant.h"
 #include "../include/errorcodes.h"
 #include "../include/helpers.h"
-
+#include <assert.h>
 
 //Initialize variant.
 int var_init(dlmsVARIANT* data)
 {
-    // data->vt = DLMS_DATA_TYPE_NONE;
+    data->vt = DLMS_DATA_TYPE_NONE;
     data->byteArr = NULL;
     return DLMS_ERROR_CODE_OK;
 }
@@ -23,6 +23,9 @@ int var_getSize(DLMS_DATA_TYPE vt)
     case DLMS_DATA_TYPE_INT8:
     case DLMS_DATA_TYPE_UINT8:
         nSize = 1;
+        break;
+    case DLMS_DATA_TYPE_UINT32:
+        nSize = 4;
         break;
     case DLMS_DATA_TYPE_INT16:
         nSize = 2;
@@ -106,44 +109,31 @@ int var_copy(dlmsVARIANT* target, dlmsVARIANT* source)
 
 int var_toInteger(dlmsVARIANT* data)
 {
-//     int ret;
-//     if ((data->vt & DLMS_DATA_TYPE_BYREF) != 0)
-//     {
-//         dlmsVARIANT tmp;
-//         if ((ret = var_copy(&tmp, data)) == 0)
-//         {
-//             ret = var_toInteger(&tmp);
-//         }
-//         else
-//         {
-// #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-//             assert(0);
-// #endif
-//             ret = -1;
-//         }
-//         return ret;
-//     }
-//     switch (data->vt)
-//     {
-//     case DLMS_DATA_TYPE_NONE:
-//         ret = 0;
-//         break;
-//     case DLMS_DATA_TYPE_STRING:
-//         ret = hlp_stringToInt((const char*)data->strVal);
-//         break;
-// #ifndef DLMS_IGNORE_DELTA
-//     case DLMS_DATA_TYPE_DELTA_UINT32:
-//         ret = data->ulVal;
-//         break;
-// #endif //DLMS_IGNORE_DELTA
-//     default:
-// #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-//         assert(0);
-// #endif
-//         ret = 0;
-//         break;
-//     }
-    // return ret;
+    int ret;
+    switch (data->vt)
+    {
+    case DLMS_DATA_TYPE_NONE:
+        ret = 0;
+        break;
+    case DLMS_DATA_TYPE_STRING:
+        ret = hlp_stringToInt((const char*)data->strVal);
+        break;
+#ifndef DLMS_IGNORE_DELTA
+    case DLMS_DATA_TYPE_DELTA_UINT32:
+        ret = data->ulVal;
+        break;
+    case DLMS_DATA_TYPE_UINT32:
+        ret = data->ulVal;
+        break;
+#endif //DLMS_IGNORE_DELTA
+    default:
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+        assert(0);
+#endif
+        ret = 0;
+        break;
+    }
+    return ret;
     return 0;
 }
 
