@@ -299,6 +299,28 @@ int hlp_getObjectCount2(gxByteBuffer* buff, uint16_t* count)
     {
         return ret;
     }
+    if (ch > 0x80)
+    {
+        if (ch == 0x81)
+        {
+            ret = bb_getUInt8(buff, &ch);
+            *count = ch;
+        }
+        else if (ch == 0x82)
+        {
+            ret = bb_getUInt16(buff, count);
+        }
+        else if (ch == 0x84)
+        {
+            uint32_t value;
+            ret = bb_getUInt32(buff, &value);
+            *count = (uint16_t)value;
+        }
+        else
+        {
+            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
+    }
     else
     {
         *count = ch;

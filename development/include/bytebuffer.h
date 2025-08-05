@@ -81,6 +81,12 @@ int bb_setUInt32(
     uint32_t item);
 
 
+int bb_get(
+gxByteBuffer* bb,
+unsigned char* value,
+uint32_t count);
+
+
 int bb_setUInt32ByIndex(
     gxByteBuffer *arr,
     uint32_t index,

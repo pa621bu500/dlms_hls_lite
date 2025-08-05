@@ -1,6 +1,11 @@
+#ifndef GXHELPERS_H
+#define GXHELPERS_H
+
 #include <stdint.h>    
 #include "bytebuffer.h"
 #include "../include/gxmem.h"
+
+static const unsigned char EMPTY_SYSTEM_TITLE[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
 #define GETU32(pt) (((uint32_t)(pt)[0] << 24) | \
                     ((uint32_t)(pt)[1] << 16) | \
@@ -35,3 +40,6 @@ int hlp_getLogicalNameToString(const unsigned char value[6], char* ln);
 int hlp_getObjectCount2(
 gxByteBuffer* buff,
 uint16_t* count);
+
+
+#endif

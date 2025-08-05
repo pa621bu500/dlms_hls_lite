@@ -444,6 +444,84 @@ int apdu_generateAarq(
     return ret;
 }
 
+int apdu_updateAuthentication(
+    dlmsSettings *settings,
+    gxByteBuffer *buff)
+{
+    int ret;
+    unsigned char ch;
+    if ((ret = bb_getUInt8(buff, &ch)) != 0)
+    {
+        return ret;
+    }
+
+    if ((ret = bb_getUInt8(buff, &ch)) != 0)
+    {
+        return ret;
+    }
+    if (ch != 0x60)
+    {
+        return DLMS_ERROR_CODE_INVALID_TAG;
+    }
+    if ((ret = bb_getUInt8(buff, &ch)) != 0)
+    {
+        return ret;
+    }
+    if (ch != 0x85)
+    {
+        return DLMS_ERROR_CODE_INVALID_TAG;
+    }
+    if ((ret = bb_getUInt8(buff, &ch)) != 0)
+    {
+        return ret;
+    }
+    if (ch != 0x74)
+    {
+        return DLMS_ERROR_CODE_INVALID_TAG;
+    }
+    if ((ret = bb_getUInt8(buff, &ch)) != 0)
+    {
+        return ret;
+    }
+    if (ch != 0x05)
+    {
+        return DLMS_ERROR_CODE_INVALID_TAG;
+    }
+    if ((ret = bb_getUInt8(buff, &ch)) != 0)
+    {
+        return ret;
+    }
+    if (ch != 0x08)
+    {
+        return DLMS_ERROR_CODE_INVALID_TAG;
+    }
+    if ((ret = bb_getUInt8(buff, &ch)) != 0)
+    {
+        return ret;
+    }
+    if (ch != 0x02)
+    {
+        return DLMS_ERROR_CODE_INVALID_TAG;
+    }
+    if ((ret = bb_getUInt8(buff, &ch)) != 0)
+    {
+        return ret;
+    }
+    switch (ch)
+    {
+    case DLMS_AUTHENTICATION_NONE:
+    case DLMS_AUTHENTICATION_LOW:
+#ifndef DLMS_IGNORE_HIGH_GMAC
+    case DLMS_AUTHENTICATION_HIGH_GMAC:
+#endif // DLMS_IGNORE_HIGH_GMAC
+        break;
+    default:
+        return DLMS_ERROR_CODE_INVALID_TAG;
+    }
+    settings->authentication = (DLMS_AUTHENTICATION)ch;
+    return 0;
+}
+
 int apdu_generateApplicationContextName(
     dlmsSettings* settings,
     gxByteBuffer* data)
@@ -979,6 +1057,129 @@ int apdu_parsePDU(
                     }
                     *diagnostic = (DLMS_SOURCE_DIAGNOSTIC)tag;
                     break;
+
+                case BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | (unsigned char)PDU_TYPE_CALLED_AP_INVOCATION_ID:
+                    if ((ret = bb_getUInt8(buff, &len)) != 0)
+                    {
+                        #ifdef DLMS_DEBUG
+                                        svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid AP invocationID. "), -1);
+                        #endif // DLMS_DEBUG
+                        break;
+                    }
+                    if (len != 0xA)
+                    {
+                        ret = DLMS_ERROR_CODE_INVALID_TAG;
+                        break;
+                    }
+                    // Choice for result (Universal, Octet string type)
+                    if ((ret = bb_getUInt8(buff, &tag)) != 0)
+                    {
+                        break;
+                    }
+                    if (tag != BER_TYPE_OCTET_STRING)
+                    {
+                        ret = DLMS_ERROR_CODE_INVALID_TAG;
+                        break;
+                    }
+                    // responding-AP-title-field
+                    // Get len.
+                    if ((ret = bb_getUInt8(buff, &len)) != 0)
+                    {
+                        break;
+                    }
+                    if ((ret = bb_get(buff, settings->sourceSystemTitle, len)) != 0)
+                    {
+                        break;
+                    }
+                    // If system title is invalid.
+                    if (len != 8)
+                    {
+                        memset(settings->sourceSystemTitle, 0, 8);
+                    }
+                    break;
+                case (uint16_t)BER_TYPE_CONTEXT | (unsigned char)PDU_TYPE_SENDER_ACSE_REQUIREMENTS:
+                case (uint16_t)BER_TYPE_CONTEXT | (unsigned char)PDU_TYPE_CALLING_AP_INVOCATION_ID:
+                                // Get sender ACSE-requirements field component.
+                            if ((ret = bb_getUInt8(buff, &len)) != 0)
+                            {
+                        #ifdef DLMS_DEBUG
+                                        svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid sender ACSE-requirements field. "), -1);
+                        #endif // DLMS_DEBUG
+                                        break;
+                            }
+                            if (len != 2)
+                            {
+                #ifdef DLMS_DEBUG
+                                svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid sender ACSE-requirements field. "), -1);
+                #endif // DLMS_DEBUG
+                                ret = DLMS_ERROR_CODE_INVALID_TAG;
+                                break;
+                            }
+                            if ((ret = bb_getUInt8(buff, &tag)) != 0)
+                            {
+                #ifdef DLMS_DEBUG
+                                svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid sender ACSE-requirements field. "), -1);
+                #endif // DLMS_DEBUG
+                                break;
+                            }
+
+                            // Get only value because client app is sending system title with LOW authentication.
+                            if ((ret = bb_getUInt8(buff, &tag)) != 0)
+                            {
+                #ifdef DLMS_DEBUG
+                                svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid sender ACSE-requirements field. "), -1);
+                #endif // DLMS_DEBUG
+                                break;
+                            }
+                #ifndef DLMS_IGNORE_SERVER
+                            if (ciphered && tag == 0x80)
+                            {
+                                afu &= ~DLMS_AFU_MISSING_SENDER_ACSE_REQUIREMENTS;
+                            }
+                #endif // DLMS_IGNORE_SERVER
+            break;
+            case (uint16_t)BER_TYPE_CONTEXT | (unsigned char)PDU_TYPE_MECHANISM_NAME:
+            case (uint16_t)BER_TYPE_CONTEXT | (unsigned char)PDU_TYPE_CALLING_AE_INVOCATION_ID:
+                if ((ret = apdu_updateAuthentication(settings, buff)) != 0)
+                        {
+                    #ifdef DLMS_DEBUG
+                            svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid mechanism name. "), ret);
+                    #endif // DLMS_DEBUG
+                            break;
+                        }
+                    #ifndef DLMS_IGNORE_HIGH_GMAC
+                        unsigned char invalidSystemTitle;
+                        invalidSystemTitle = memcmp(settings->sourceSystemTitle, EMPTY_SYSTEM_TITLE, 8) == 0;
+                    #ifndef DLMS_IGNORE_SERVER
+                        if (settings->server && settings->authentication > DLMS_AUTHENTICATION_LOW)
+                        {
+                            afu |= DLMS_AFU_MISSING_CALLING_AUTHENTICATION_VALUE;
+                        }
+                    #endif // DLMS_IGNORE_SERVER
+                        if (settings->server && settings->authentication == DLMS_AUTHENTICATION_HIGH_GMAC && invalidSystemTitle)
+                        {
+                            *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
+                            return 0;
+                        }
+                    #endif // DLMS_IGNORE_HIGH_GMAC
+                    #ifndef DLMS_IGNORE_SERVER
+                        if (ciphered)
+                        {
+                            afu &= ~DLMS_AFU_MISSING_MECHANISM_NAME;
+                        }
+                    #endif // DLMS_IGNORE_SERVER
+                        break;
+
+            case BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | (unsigned char)PDU_TYPE_SENDER_ACSE_REQUIREMENTS:
+                if ((ret = bb_getUInt8(buff, &len)) != 0 ||
+                    (ret = bb_getUInt8(buff, &tag)) != 0 ||
+                    (ret = bb_getUInt8(buff, &len)) != 0 ||
+                    (ret = bb_clear(&settings->stoCChallenge)) != 0 ||
+                    (ret = bb_set2(&settings->stoCChallenge, buff, buff->position, len)) != 0)
+                {
+                    break;
+                }
+                break;
         }
     }
     if (ret == 0)

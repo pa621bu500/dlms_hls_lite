@@ -194,6 +194,22 @@ int bb_setUInt8(
     return ret;
 }
 
+
+int bb_get(
+    gxByteBuffer* bb,
+    unsigned char* value,
+    uint32_t count)
+{
+    if (bb == NULL || value == NULL || bb->size - bb->position < count)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    memcpy(value, bb->data + bb->position, count);
+    bb->position += count;
+    return 0;
+}
+
+
 uint32_t bb_size(gxByteBuffer *arr)
 {
     return arr != NULL ? arr->size : 0;

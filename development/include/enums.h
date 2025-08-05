@@ -275,7 +275,7 @@ typedef enum
         // /*
         // * AP-invocation-identifier OPTIONAL.
         // */
-        // PDU_TYPE_CALLED_AP_INVOCATION_ID = 4,
+        PDU_TYPE_CALLED_AP_INVOCATION_ID = 4,
 
         // /*
         // * AE-invocation-identifier OPTIONAL
@@ -295,7 +295,7 @@ typedef enum
         // /*
         // * AP-invocation-identifier OPTIONAL
         // */
-        // PDU_TYPE_CALLING_AP_INVOCATION_ID = 8,
+        PDU_TYPE_CALLING_AP_INVOCATION_ID = 8,
 
         // /*
         // * AE-invocation-identifier OPTIONAL
