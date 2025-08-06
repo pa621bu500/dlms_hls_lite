@@ -97,6 +97,13 @@ int bb_clear(
     return 0;
 }
 
+char* bb_toHexString(
+    gxByteBuffer* arr)
+{
+    char* buff = hlp_bytesToHex(arr->data, arr->size);
+    return buff;
+}
+
 int bb_getUInt8(
     gxByteBuffer *arr,
     unsigned char *value)

@@ -52,7 +52,7 @@ typedef enum
     // Access Error : Device reports a temporary failure
     // DLMS_ERROR_CODE_TEMPORARY_FAILURE = 2,
     // // Access Error : Device reports Read-Write denied
-    // DLMS_ERROR_CODE_READ_WRITE_DENIED = 3,
+    DLMS_ERROR_CODE_READ_WRITE_DENIED = 3,
     // // Access Error : Device reports a undefined object
     // DLMS_ERROR_CODE_UNDEFINED_OBJECT = 4,
     // // Access Error : Device reports a inconsistent Class or Object

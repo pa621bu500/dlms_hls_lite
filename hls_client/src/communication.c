@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include "../include/poll_result.h"
 #include "../../development/include/errorcodes.h"
 #include "../include/communication.h"
 #include "../include/connection.h"
@@ -22,6 +23,12 @@
 #include "../../development/include/bytebuffer.h"
 #include "../../development/include/client.h"
 #include "../../development/include/variant.h"
+
+#define GET_METER_SN 100
+#define POLL_ITEM_TOTAL_ACTIVE_ENERGY 1300
+#define GET_RELAY_STATUS 5500
+#define SET_RELAY_ON 5600
+#define SET_RELAY_OFF 5700
 
 int com_open(
     connection *connection,
@@ -189,20 +196,20 @@ int readData(connection *connection, gxByteBuffer *data, int *index)
     //     }
     //     connection->data.size += ret;
     // }
-    // if (connection->trace > GX_TRACE_LEVEL_INFO)
-    // {
-    //     char* hex = hlp_bytesToHex(connection->data.data + *index, connection->data.size - *index);
-    //     if (*index == 0)
-    //     {
-    //         printf("\nRX:\t %s", hex);
-    //     }
-    //     else
-    //     {
-    //         printf(" %s", hex);
-    //     }
-    //     free(hex);
-    //     *index = connection->data.size;
-    // }
+    if (connection->trace > GX_TRACE_LEVEL_INFO)
+    {
+        char* hex = hlp_bytesToHex(connection->data.data + *index, connection->data.size - *index);
+        if (*index == 0)
+        {
+            printf("\nRX:\t %s", hex);
+        }
+        else
+        {
+            printf(" %s", hex);
+        }
+        free(hex);
+        *index = connection->data.size;
+    }
     return 0;
 }
 
@@ -225,7 +232,12 @@ int readDLMSPacket(
     reply->complete = 0;
     connection->data.size = 0;
     connection->data.position = 0;
-
+    if (connection->trace == GX_TRACE_LEVEL_VERBOSE)
+    {
+        hex = bb_toHexString(data);
+        printf("\nTX:\t%s\n", hex);
+        free(hex);
+    }
     if ((ret = sendData(connection, data)) != 0)
     {
         return ret;
@@ -286,7 +298,7 @@ int sendData(connection *connection, gxByteBuffer *data)
     if (connection->comPort != INVALID_HANDLE_VALUE)
     {
 #if defined(_WIN32) || defined(_WIN64) // Windows
-        // EVS2 NOT SUPPORTED
+                                       // EVS2 NOT SUPPORTED
 #else
         ret = write(connection->comPort, data->data, data->size);
         if (ret != data->size)
@@ -503,6 +515,144 @@ int com_updateInvocationCounter(
     return ret;
 }
 
+
+int com_readValue_new(connection *connection, gxObject *object, unsigned char index, int comm_item, t_poll_result *poll_result)
+{
+    int ret;
+    char *data = NULL;
+    char ln[25];
+    ret = hlp_getLogicalNameToString(object->logicalName, ln);
+    if (ret != DLMS_ERROR_CODE_OK)
+    {
+        return ret;
+    }
+    if (connection->trace > GX_TRACE_LEVEL_WARNING)
+    {
+        // printf("-------- Reading Object %s %s\r\n", obj_typeToString2(object->objectType), ln);
+    }
+    ret = com_read(connection, object, index);
+    if (ret != DLMS_ERROR_CODE_OK)
+    {
+        if (connection->trace > GX_TRACE_LEVEL_OFF)
+        {
+            printf("Failed to read object");
+        }
+        // Return error if not DLMS error.
+        if (ret != DLMS_ERROR_CODE_READ_WRITE_DENIED)
+        {
+            return ret;
+        }
+    }
+    if (connection->trace > GX_TRACE_LEVEL_WARNING)
+    {
+        if (data != NULL)
+        {
+            // printf("%s\n", data);
+            char *line = strtok(data, "\n");
+            while (line != NULL)
+            {
+                char *valuePos = strstr(line, "Index: 2 Value:");
+                if (valuePos != NULL)
+                {
+                    // Move the pointer to the content after "Value:"
+                    char *valueStart = strstr(valuePos, "Value:");
+                    if (valueStart != NULL)
+                    {
+                        valueStart += strlen("Value:"); // Skip past "Value:"
+                        while (*valueStart == ' ')
+                            valueStart++; // Trim leading spaces
+                        parse_rx(valueStart, comm_item, poll_result);
+                    }
+                }
+                line = strtok(NULL, "\n");
+            }
+            free(data);
+            data = NULL;
+        }
+    }
+    return 0;
+}
+
+int parse_rx(char *data, int comm_item, t_poll_result *poll_result)
+{
+    switch (comm_item)
+    {
+    case GET_METER_SN:
+    {
+        char output[64] = {0};
+        int i = 0;
+        char *token = strtok(data, " ");
+        while (token != NULL && i < sizeof(output) - 1)
+        {
+            int byte;
+            sscanf(token, "%x", &byte);
+            output[i++] = (char)byte;
+            token = strtok(NULL, " ");
+        }
+        printf("meter_sn:%s\n", output);
+        return 0;
+    }
+
+    case POLL_ITEM_TOTAL_ACTIVE_ENERGY:
+        if (poll_result->parse_stage == 0)
+        {
+            char output[64] = {0};
+            int i = 0;
+            char *token = strtok(data, " ");
+            while (token != NULL && i < sizeof(output) - 1)
+            {
+                int byte;
+                sscanf(token, "%x", &byte);
+                output[i++] = (char)byte;
+                token = strtok(NULL, " ");
+            }
+            memcpy(poll_result->meter_identity, output, i);
+            poll_result->meter_identity[i] = '\0'; // Ensure null-termination
+            poll_result->parse_stage = 1;
+            // printf("total_active_energy_wh:%s\n", data);
+        }
+        else if (poll_result->parse_stage == 1)
+        {
+            time_t now = time(NULL);
+            struct tm *t = localtime(&now);
+            poll_result->t = t;
+            poll_result->kwh = atof(data);
+            poll_result->parse_stage = 2;
+            printf("total_active_energy_wh: %s\n", data);
+        }
+
+        return 0;
+
+    case GET_RELAY_STATUS:
+    {
+        int val = atoi(data);
+        if (val == 1)
+        {
+            printf("rls_status:on\n");
+        }
+        else if (val == 0)
+        {
+            printf("rls_status:off\n");
+        }
+        else
+        {
+            printf("rls_status:unknown\n");
+        }
+        return 0;
+    }
+
+    case SET_RELAY_ON:
+    case SET_RELAY_OFF:
+        return 0;
+
+    default:
+        printf("cannot parse rx - poll item not supported\n");
+        return -1;
+    }
+}
+
+
+
 int com_disconnect(
     connection *connection)
 {
@@ -603,8 +753,9 @@ int com_initializeConnection(
         if (connection->settings.authentication > DLMS_AUTHENTICATION_LOW)
         {
             if ((ret = cl_getApplicationAssociationRequest(&connection->settings, &messages)) != 0 ||
-                (ret = com_readDataBlock(connection, &messages, &reply)) != 0 ||
-                (ret = cl_parseApplicationAssociationResponse(&connection->settings, &reply.data)) != 0)
+                (ret = com_readDataBlock(connection, &messages, &reply)) != 0 
+                ||(ret = cl_parseApplicationAssociationResponse(&connection->settings, &reply.data)) != 0
+            )
             {
                 mes_clear(&messages);
                 reply_clear(&reply);
@@ -791,5 +942,6 @@ int com_initializeOpticalHead(
         printf("Failed to Open port. tcsetattr failed.\r");
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
+    
     return ret;
 }

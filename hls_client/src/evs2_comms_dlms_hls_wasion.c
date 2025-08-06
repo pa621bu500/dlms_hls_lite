@@ -189,6 +189,7 @@ int connectMeter(int argc, char *argv[])
     bb_init(&con.settings.password);
     bb_addString(&con.settings.password, "00000000");
     con.trace = GX_TRACE_LEVEL_INFO;
+    // con.trace = GX_TRACE_LEVEL_VERBOSE;
     con.settings.cipher.security = DLMS_SECURITY_AUTHENTICATION_ENCRYPTION;
     bb_clear(&con.settings.cipher.authenticationKey);
     bb_addHexString(&con.settings.cipher.authenticationKey, "D0D1D2D3D4D5D6D7D8D9DADBDCDDDEDF");
@@ -304,7 +305,7 @@ int readSerialPort(
     //-------------
     if (ret == 0 && readObjects != NULL)
     {
-         if ((ret = com_updateInvocationCounter(connection, invocationCounter)) == 0 
+        if ((ret = com_updateInvocationCounter(connection, invocationCounter)) == 0 
         && (ret = com_initializeConnection(connection)) == 0 
         &&  (ret = com_loadHardcodedObjects(connection)) == 0
         )
@@ -348,7 +349,7 @@ int readSerialPort(
                 //     }
                 // }
                 if(comm_item==GET_METER_SN || comm_item==GET_RELAY_STATUS || comm_item==POLL_ITEM_TOTAL_ACTIVE_ENERGY){
-                    // ret = com_readValue_new(connection, obj, index, comm_item,poll_result);
+                    ret = com_readValue_new(connection, obj, index, comm_item,poll_result);
                 }else if(comm_item==SET_RELAY_OFF){
                     // ret = relay_off(connection);
                 }else if(comm_item==SET_RELAY_ON){

@@ -132,6 +132,35 @@ int hlp_setObjectCount(uint32_t count, gxByteBuffer* buff)
     return ret;
 }
 
+char* hlp_bytesToHex(const unsigned char* bytes, int count)
+{
+    const char hexArray[] = { '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' };
+    unsigned char tmp;
+    int pos;
+    char* hexChars;
+    if (count != 0)
+    {
+        hexChars = (char*)gxmalloc(3 * count);
+        if (hexChars != NULL)
+        {
+            for (pos = 0; pos != count; ++pos)
+            {
+                tmp = bytes[pos] & 0xFF;
+                hexChars[pos * 3] = hexArray[tmp >> 4];
+                hexChars[pos * 3 + 1] = hexArray[tmp & 0x0F];
+                hexChars[pos * 3 + 2] = ' ';
+            }
+            hexChars[(3 * count) - 1] = '\0';
+        }
+    }
+    else
+    {
+        hexChars = (char*)gxmalloc(1);
+        hexChars[0] = '\0';
+    }
+    return hexChars;
+}
+
 int hlp_setLogicalName(unsigned char ln[6], const char* name)
 {
     char* ch;

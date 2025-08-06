@@ -29,6 +29,8 @@ unsigned char hlp_getValue(char c);
 
 unsigned char hlp_rand(void);
 
+char* hlp_bytesToHex(const unsigned char* pBytes, int count);
+
 int hlp_setObjectCount(
 uint32_t count,
 gxByteBuffer* buff);
