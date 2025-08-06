@@ -104,18 +104,47 @@ int dlms_getValueFromData(dlmsSettings* settings,
     return 0;
 }
 
-// int dlms_setData(gxByteBuffer* buff, DLMS_DATA_TYPE type, dlmsVARIANT* value)
-// {
-// #ifndef DLMS_IGNORE_MALLOC
-//     int ret;
-//     ret = var_changeType(value, type);
-//     if (ret != DLMS_ERROR_CODE_OK)
-//     {
-//         return ret;
-//     }
-// #endif //DLMS_IGNORE_MALLOC
-//     return var_getBytes2(value, type, buff);
-// }
+
+unsigned char dlms_useDedicatedKey(dlmsSettings *settings)
+{
+    return settings->cipher.dedicatedKey != NULL;
+}
+
+/**
+ * Get used glo message.
+ *
+ * @param command
+ *            Executed DLMS command.
+ * @return Integer value of glo message.
+ */
+unsigned char dlms_getGloMessage(dlmsSettings *settings, DLMS_COMMAND command, DLMS_COMMAND encryptedCommand)
+{
+    unsigned char cmd;
+    unsigned gp = ((settings->negotiatedConformance & DLMS_CONFORMANCE_GENERAL_PROTECTION) != 0 &&
+                   (settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0) ||
+                  // If pre-established connection.
+                  dlms_usePreEstablishedConnection(settings) != 0;
+    unsigned ded = dlms_useDedicatedKey(settings) && (settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0;
+    if (encryptedCommand == DLMS_COMMAND_GENERAL_GLO_CIPHERING)
+    {
+        cmd = encryptedCommand;
+    }
+    else if (gp && encryptedCommand == DLMS_COMMAND_NONE)
+    {
+        cmd = DLMS_COMMAND_GENERAL_GLO_CIPHERING;
+    }
+    else
+    {
+        switch (command)
+        {
+            case DLMS_COMMAND_METHOD_REQUEST:
+                cmd = DLMS_COMMAND_GLO_METHOD_REQUEST;
+                break;
+        }
+    }
+    return cmd;
+}
+
 
 /*
    - this function is used to build data link layer
@@ -357,6 +386,33 @@ unsigned char dlms_useHdlc(DLMS_INTERFACE_TYPE type)
 #endif // DLMS_IGNORE_HDLC
 }
 
+void dlms_multipleBlocks(
+    gxLNParameters *p,
+    gxByteBuffer *reply,
+    unsigned char ciphering)
+{
+    // Check is all data fit to one message if data is given.
+    int len = bb_available(p->data);
+    if (p->attributeDescriptor != NULL)
+    {
+        len += p->attributeDescriptor->size;
+    }
+    if (ciphering)
+    {
+        len += CIPHERING_HEADER_SIZE;
+    }
+    if (!p->multipleBlocks)
+    {
+        // Add command type and invoke and priority.
+        p->multipleBlocks = 2 + reply->size + len > p->settings->maxPduSize;
+    }
+    if (p->lastBlock)
+    {
+        // Add command type and invoke and priority.
+        p->lastBlock = !(8 + reply->size + len > p->settings->maxPduSize);
+    }
+}
+
 unsigned char dlms_getInvokeIDPriority(dlmsSettings *settings, unsigned char increase)
 {
     unsigned char value = 0;
@@ -428,6 +484,10 @@ int dlms_getLNPdu(
         }
         if (p->command != DLMS_COMMAND_RELEASE_REQUEST)
         {
+            if (p->command != DLMS_COMMAND_GET_REQUEST && p->data != NULL && p->data->size != 0)
+            {
+                dlms_multipleBlocks(p, h, ciphering);
+            }
             ret = bb_setUInt8(h, p->requestType);
             // Add Invoke Id And Priority.
             if (p->invokeId != 0)
@@ -458,6 +518,27 @@ int dlms_getLNPdu(
         // Add data that fits to one block.
         if (ret == 0 && len == 0)
         {
+            // Add status if reply.
+            if (p->status != 0xFF)
+            {
+                if (p->status != 0 && (p->command == DLMS_COMMAND_GET_RESPONSE))
+                {
+                    ret = bb_setUInt8(h, 1);
+                }
+                ret = bb_setUInt8(h, p->status);
+            }
+             if (ret == 0 && p->data != NULL && p->data->size != 0)
+            {
+                len = bb_available(p->data);
+                if (len + reply->size > p->settings->maxPduSize)
+                {
+                    len = (uint16_t)(p->settings->maxPduSize - h->size - p->data->size - p->data->position);
+                }
+    
+                ret = bb_set2(reply, p->data, p->data->position, len);
+
+            }
+
         }
 #ifndef DLMS_IGNORE_HIGH_GMAC
         if (ret == 0 && ciphering && reply->size != 0 && p->command != DLMS_COMMAND_RELEASE_REQUEST)
@@ -490,19 +571,19 @@ int dlms_getLNPdu(
 #ifdef DLMS_TRACE_PDU
             cip_tracePdu(1, reply);
 #endif // DLMS_TRACE_PDU
-            //             ret = cip_encrypt(
-            //                 &p->settings->cipher,
-            //                 p->settings->cipher.security,
-            //                 DLMS_COUNT_TYPE_PACKET,
-            //                 p->settings->cipher.invocationCounter,
-            //                 dlms_getGloMessage(p->settings, p->command, p->encryptedCommand),
-            // #ifndef DLMS_IGNORE_MALLOC
-            //                 p->settings->cipher.systemTitle.data,
-            // #else
-            //                 p->settings->cipher.systemTitle,
-            // #endif //DLMS_IGNORE_MALLOC
-            //                 key,
-            //                 reply);
+                        ret = cip_encrypt(
+                            &p->settings->cipher,
+                            p->settings->cipher.security,
+                            DLMS_COUNT_TYPE_PACKET,
+                            p->settings->cipher.invocationCounter,
+                            dlms_getGloMessage(p->settings, p->command, p->encryptedCommand),
+            #ifndef DLMS_IGNORE_MALLOC
+                            p->settings->cipher.systemTitle.data,
+            #else
+                            p->settings->cipher.systemTitle,
+            #endif //DLMS_IGNORE_MALLOC
+                            key,
+                            reply);
         }
 #endif // DLMS_IGNORE_HIGH_GMAC1
     }
