@@ -126,84 +126,46 @@ int apdu_parseUserInformation(
     uint64_t invocationCounter;
 
 
-//     if (tag == DLMS_COMMAND_GLO_INITIATE_RESPONSE ||
-//         tag == DLMS_COMMAND_GLO_INITIATE_REQUEST ||
-//         tag == DLMS_COMMAND_DED_INITIATE_RESPONSE ||
-//         tag == DLMS_COMMAND_DED_INITIATE_REQUEST ||
-//         tag == DLMS_COMMAND_GENERAL_GLO_CIPHERING ||
-//         tag == DLMS_COMMAND_GENERAL_DED_CIPHERING)
-//     {
-//         *command = (unsigned char)tag;
-//         --data->position;
-// #ifndef DLMS_IGNORE_MALLOC
-//         if ((ret = cip_decrypt(&settings->cipher,
-//                                settings->sourceSystemTitle,
-//                                &settings->cipher.blockCipherKey,
-//                                data,
-//                                &security,
-//                                &suite,
-//                                &invocationCounter)) != 0)
-//         {
-//             return ret;
-//         }
-// #else
-//         if ((ret = cip_decrypt(&settings->cipher,
-//                                settings->sourceSystemTitle,
-//                                settings->cipher.blockCipherKey,
-//                                data,
-//                                &security,
-//                                &suite,
-//                                &invocationCounter)) != 0)
-//         {
-//             return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
-//         }
-// #endif // DLMS_IGNORE_MALLOC
+    if (tag == DLMS_COMMAND_GLO_INITIATE_RESPONSE ||
+        tag == DLMS_COMMAND_GLO_INITIATE_REQUEST ||
+        tag == DLMS_COMMAND_GENERAL_GLO_CIPHERING 
+    )
+    {
+        *command = (unsigned char)tag;
+        --data->position;
 
-//         if (settings->expectedSecurityPolicy != 0xFF && security != settings->expectedSecurityPolicy << 4)
-//         {
-//             return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
-//         }
-//         if (settings->expectedSecuritySuite != 0xFF && suite != settings->expectedSecuritySuite)
-//         {
-//             return DLMS_ERROR_CODE_INVALID_SECURITY_SUITE;
-//         }
-// #ifdef DLMS_INVOCATION_COUNTER_VALIDATOR
-//         if (svr_validateInvocationCounter(settings, invocationCounter) != 0)
-//         {
-//             return DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL;
-//         }
-// #else
-//         if (settings->expectedInvocationCounter != NULL)
-//         {
-//             if (invocationCounter < *settings->expectedInvocationCounter)
-//             {
-//                 return DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL;
-//             }
-// #ifdef DLMS_COSEM_INVOCATION_COUNTER_SIZE64
-//             *settings->expectedInvocationCounter = invocationCounter;
-// #else
-//             *settings->expectedInvocationCounter = (uint32_t)(invocationCounter);
-// #endif // DLMS_COSEM_INVOCATION_COUNTER_SIZE64
-//         }
-// #endif // DLMS_INVOCATION_COUNTER_VALIDATOR
-//        // If client system title doesn't match.
-//         if (settings->expectedClientSystemTitle != NULL &&
-//             memcmp(settings->expectedClientSystemTitle, EMPTY_SYSTEM_TITLE, 8) != 0 &&
-//             memcmp(settings->sourceSystemTitle, settings->expectedClientSystemTitle, 8) != 0)
-//         {
-//             return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
-//         }
+        if ((ret = cip_decrypt(&settings->cipher,
+                               settings->sourceSystemTitle,
+                               &settings->cipher.blockCipherKey,
+                               data,
+                               &security,
+                               &suite,
+                               &invocationCounter)) != 0)
+        {
+            return ret;
+        }
 
-//         settings->cipher.security = security;
-//         settings->cipher.suite = suite;
-//         if ((ret = bb_getUInt8(data, &tag)) != 0)
-//         {
-//             return ret;
-//         }
-//     }
+        if (settings->expectedSecurityPolicy != 0xFF && security != settings->expectedSecurityPolicy << 4)
+        {
+            return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
+        }
+     
+#endif // DLMS_INVOCATION_COUNTER_VALIDATOR
+       // If client system title doesn't match.
+        if (settings->expectedClientSystemTitle != NULL &&
+            memcmp(settings->expectedClientSystemTitle, EMPTY_SYSTEM_TITLE, 8) != 0 &&
+            memcmp(settings->sourceSystemTitle, settings->expectedClientSystemTitle, 8) != 0)
+        {
+            return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
+        }
 
-
-    #endif // DLMS_IGNORE_HIGH_GMAC
+        settings->cipher.security = security;
+        settings->cipher.suite = suite;
+        if ((ret = bb_getUInt8(data, &tag)) != 0)
+        {
+            return ret;
+        }
+    }
     response = tag == DLMS_COMMAND_INITIATE_RESPONSE;
     if (response)
     {
@@ -948,11 +910,7 @@ int apdu_parsePDU(
                 {
                     if ((ret = apdu_parseApplicationContextName(settings, buff, &ciphered)) != 0)
                     {
-                        // #ifdef DLMS_DEBUG
-                        //                 svr_notifyTrace(GET_STR_FROM_EEPROM("apdu_parseApplicationContextName "), ret);
-                        // #endif //DLMS_DEBUG
-                        //                 * diagnostic = DLMS_SOURCE_DIAGNOSTIC_APPLICATION_CONTEXT_NAME_NOT_SUPPORTED;
-                        //                 *result = DLMS_ASSOCIATION_RESULT_PERMANENT_REJECTED;
+
                         return 0;
                     }
                     #ifndef DLMS_IGNORE_SERVER
@@ -970,9 +928,7 @@ int apdu_parsePDU(
                 {
                     if ((ret = apdu_handleResultComponent(*diagnostic)) != 0)
                     {
-                    #ifdef DLMS_DEBUG
-                                        svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid result component. "), ret);
-                    #endif // DLMS_DEBUG
+
                     }
                     return ret;
                 }
@@ -985,9 +941,7 @@ int apdu_parsePDU(
                 // Get len.
                 if ((ret = bb_getUInt8(buff, &len)) != 0)
                 {
-                    #ifdef DLMS_DEBUG
-                        svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid AP title "), -1);
-                    #endif // DLMS_DEBUG
+   
                         break;
                 }
                 if (len != 3)
@@ -998,9 +952,7 @@ int apdu_parsePDU(
                 // Choice for result.
                 if ((ret = bb_getUInt8(buff, &tag)) != 0)
                 {
-                    #ifdef DLMS_DEBUG
-                        svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid AP title "), -1);
-                    #endif // DLMS_DEBUG
+     
                         break;
                 }
                 if (tag != BER_TYPE_INTEGER)
@@ -1061,9 +1013,7 @@ int apdu_parsePDU(
                 case BER_TYPE_CONTEXT | BER_TYPE_CONSTRUCTED | (unsigned char)PDU_TYPE_CALLED_AP_INVOCATION_ID:
                     if ((ret = bb_getUInt8(buff, &len)) != 0)
                     {
-                        #ifdef DLMS_DEBUG
-                                        svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid AP invocationID. "), -1);
-                        #endif // DLMS_DEBUG
+               
                         break;
                     }
                     if (len != 0xA)
@@ -1102,33 +1052,25 @@ int apdu_parsePDU(
                                 // Get sender ACSE-requirements field component.
                             if ((ret = bb_getUInt8(buff, &len)) != 0)
                             {
-                        #ifdef DLMS_DEBUG
-                                        svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid sender ACSE-requirements field. "), -1);
-                        #endif // DLMS_DEBUG
+                  
                                         break;
                             }
                             if (len != 2)
                             {
-                #ifdef DLMS_DEBUG
-                                svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid sender ACSE-requirements field. "), -1);
-                #endif // DLMS_DEBUG
+             
                                 ret = DLMS_ERROR_CODE_INVALID_TAG;
                                 break;
                             }
                             if ((ret = bb_getUInt8(buff, &tag)) != 0)
                             {
-                #ifdef DLMS_DEBUG
-                                svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid sender ACSE-requirements field. "), -1);
-                #endif // DLMS_DEBUG
+              
                                 break;
                             }
 
                             // Get only value because client app is sending system title with LOW authentication.
                             if ((ret = bb_getUInt8(buff, &tag)) != 0)
                             {
-                #ifdef DLMS_DEBUG
-                                svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid sender ACSE-requirements field. "), -1);
-                #endif // DLMS_DEBUG
+         
                                 break;
                             }
                 #ifndef DLMS_IGNORE_SERVER
@@ -1142,9 +1084,7 @@ int apdu_parsePDU(
             case (uint16_t)BER_TYPE_CONTEXT | (unsigned char)PDU_TYPE_CALLING_AE_INVOCATION_ID:
                 if ((ret = apdu_updateAuthentication(settings, buff)) != 0)
                         {
-                    #ifdef DLMS_DEBUG
-                            svr_notifyTrace(GET_STR_FROM_EEPROM("Invalid mechanism name. "), ret);
-                    #endif // DLMS_DEBUG
+                 
                             break;
                         }
                     #ifndef DLMS_IGNORE_HIGH_GMAC

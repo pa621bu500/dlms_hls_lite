@@ -93,6 +93,36 @@ int var_toInteger(
     dlmsVARIANT* data);
 
 
+int var_getBytes(
+dlmsVARIANT* data,
+gxByteBuffer* ba);
+
+//Get bytes from variant value.
+int var_getBytes2(
+dlmsVARIANT* data,
+DLMS_DATA_TYPE type,
+gxByteBuffer* ba);
+
+//Get bytes from variant value without data type.
+int var_getBytes3(
+dlmsVARIANT* data,
+DLMS_DATA_TYPE type,
+gxByteBuffer* ba,
+unsigned char addType);
+
+//Get bytes from variant value.
+int var_getBytes4(
+dlmsVARIANT* data,
+DLMS_DATA_TYPE type,
+gxByteBuffer* ba,
+unsigned char addType,
+unsigned char addArraySize,
+unsigned char addStructureSize);
+
+int var_changeType(
+    dlmsVARIANT* value,
+    DLMS_DATA_TYPE newType);
+
 int var_copy(
 dlmsVARIANT* target,
 dlmsVARIANT* source);

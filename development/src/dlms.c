@@ -17,6 +17,8 @@
 static const unsigned char LLC_SEND_BYTES[3] = {0xE6, 0xE6, 0x00};
 static const unsigned char LLC_REPLY_BYTES[3] = {0xE6, 0xE7, 0x00};
 static const unsigned char HDLC_FRAME_START_END = 0x7E;
+#define GET_AUTH_TAG(s)(s.broadcast ? 0x40 : 0) | DLMS_SECURITY_AUTHENTICATION | s.suite
+
 
 int dlms_getData(gxByteBuffer* data, gxDataInfo* info, dlmsVARIANT* value)
 {
@@ -1651,6 +1653,58 @@ int dlms_parseSnrmUaResponse(
             ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
             break;
         }
+    }
+    return ret;
+}
+
+int dlms_setData(gxByteBuffer *buff, DLMS_DATA_TYPE type, dlmsVARIANT *value)
+{
+#ifndef DLMS_IGNORE_MALLOC
+    int ret;
+    ret = var_changeType(value, type);
+    if (ret != DLMS_ERROR_CODE_OK)
+    {
+        return ret;
+    }
+#endif // DLMS_IGNORE_MALLOC
+    return var_getBytes2(value, type, buff);
+}
+
+int dlms_secure(
+    dlmsSettings *settings,
+    int32_t ic,
+    gxByteBuffer *data,
+    gxByteBuffer *secret,
+    gxByteBuffer *reply)
+{
+    int ret = 0;
+    gxByteBuffer challenge;
+    bb_clear(reply);
+
+    BYTE_BUFFER_INIT(&challenge);
+
+    // Get server Challenge.
+    // Get shared secret
+  if (settings->authentication == DLMS_AUTHENTICATION_HIGH_GMAC)
+    {
+        ret = cip_encrypt(
+            &settings->cipher,
+            DLMS_SECURITY_AUTHENTICATION,
+            DLMS_COUNT_TYPE_TAG,
+            ic,
+            GET_AUTH_TAG(settings->cipher),
+            secret->data,
+            &settings->cipher.blockCipherKey,
+            data);
+        if (ret == 0)
+        {
+            if ((ret = bb_setUInt8(reply, (unsigned char)DLMS_SECURITY_AUTHENTICATION | (unsigned char)settings->cipher.suite)) != 0 ||
+                (ret = bb_setUInt32(reply, ic)) != 0 ||
+                (ret = bb_set(reply, data->data, 12)) != 0)
+            {
+            }
+        }
+        bb_clear(&challenge);
     }
     return ret;
 }

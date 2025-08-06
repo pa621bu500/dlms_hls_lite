@@ -4,6 +4,7 @@
 #include <stdint.h>
 #define VECTOR_CAPACITY 50
 #define BYTE_BUFFER_INIT bb_init
+#define BB_ATTACH(X, V, S) bb_attach(&X, V, S, sizeof(V))
 typedef struct
 {
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
@@ -79,7 +80,6 @@ int bb_getUInt32(
 int bb_setUInt32(
     gxByteBuffer *bb,
     uint32_t item);
-
 
 int bb_get(
 gxByteBuffer* bb,

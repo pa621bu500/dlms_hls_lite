@@ -108,27 +108,27 @@ int hlp_setObjectCount(uint32_t count, gxByteBuffer* buff)
     {
         ret = bb_setUInt8(buff, (unsigned char)count);
     }
-    // else if (count < 0x100)
-    // {
-    //     if ((ret = bb_setUInt8(buff, 0x81)) == 0)
-    //     {
-    //         ret = bb_setUInt8(buff, (unsigned char)count);
-    //     }
-    // }
-    // else if (count < 0x10000)
-    // {
-    //     if ((ret = bb_setUInt8(buff, 0x82)) == 0)
-    //     {
-    //         ret = bb_setUInt16(buff, (uint16_t)count);
-    //     }
-    // }
-    // else
-    // {
-    //     if ((ret = bb_setUInt8(buff, 0x84)) == 0)
-    //     {
-    //         ret = bb_setUInt32(buff, count);
-    //     }
-    // }
+    else if (count < 0x100)
+    {
+        if ((ret = bb_setUInt8(buff, 0x81)) == 0)
+        {
+            ret = bb_setUInt8(buff, (unsigned char)count);
+        }
+    }
+    else if (count < 0x10000)
+    {
+        if ((ret = bb_setUInt8(buff, 0x82)) == 0)
+        {
+            ret = bb_setUInt16(buff, (uint16_t)count);
+        }
+    }
+    else
+    {
+        if ((ret = bb_setUInt8(buff, 0x84)) == 0)
+        {
+            ret = bb_setUInt32(buff, count);
+        }
+    }
     return ret;
 }
 

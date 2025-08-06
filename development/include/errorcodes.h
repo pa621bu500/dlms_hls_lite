@@ -56,11 +56,11 @@ typedef enum
     // // Access Error : Device reports a undefined object
     // DLMS_ERROR_CODE_UNDEFINED_OBJECT = 4,
     // // Access Error : Device reports a inconsistent Class or Object
-    // DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT = 9,
+    DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT = 9,
     // // Access Error : Device reports a unavailable object
     // DLMS_ERROR_CODE_UNAVAILABLE_OBJECT = 11,
     // // Access Error : Device reports a unmatched type
-    // DLMS_ERROR_CODE_UNMATCH_TYPE = 12,
+    DLMS_ERROR_CODE_UNMATCH_TYPE = 12,
     // // Access Error : Device reports scope of access violated
     // DLMS_ERROR_CODE_ACCESS_VIOLATED = 13,
     // // Access Error : Data Block Unavailable.

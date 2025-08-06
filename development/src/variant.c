@@ -11,6 +11,105 @@ int var_init(dlmsVARIANT* data)
     return DLMS_ERROR_CODE_OK;
 }
 
+int var_changeType(dlmsVARIANT* value, DLMS_DATA_TYPE newType)
+{
+    if (newType == value->vt)
+    {
+        return DLMS_ERROR_CODE_OK;
+    }
+}
+
+/**
+* Convert octetstring to DLMS bytes.
+*
+* buff
+*            Byte buffer where data is write.
+* value
+*            Added value.
+*/
+int var_setOctetString(gxByteBuffer* buff, dlmsVARIANT* value)
+{
+    if (value->vt == DLMS_DATA_TYPE_STRING)
+    {
+        gxByteBuffer bb;
+        BYTE_BUFFER_INIT(&bb);
+        bb_addHexString(&bb, (char*)value->strVal->data);
+        hlp_setObjectCount(bb.size, buff);
+        bb_set2(buff, &bb, 0, bb.size);
+    }
+    else if (value->vt == DLMS_DATA_TYPE_OCTET_STRING)
+    {
+        if (value->byteArr == NULL)
+        {
+            printf("reached var_setOctetString if clause");
+            // hlp_setObjectCount(0, buff);
+        }
+        else
+        {
+            hlp_setObjectCount(value->byteArr->size, buff);
+            bb_set(buff, value->byteArr->data, value->byteArr->size);
+        }
+    }
+    else if (value->vt == DLMS_DATA_TYPE_NONE)
+    {
+        hlp_setObjectCount(0, buff);
+    }
+    else
+    {
+        // Invalid data type.
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return 0;
+}
+
+int var_getBytes2(
+    dlmsVARIANT* data,
+    DLMS_DATA_TYPE type,
+    gxByteBuffer* ba)
+{
+    return var_getBytes3(data, type, ba, 1);
+}
+
+int var_getBytes3(
+    dlmsVARIANT* data,
+    DLMS_DATA_TYPE type,
+    gxByteBuffer* ba,
+    unsigned char addType)
+{
+    return var_getBytes4(data, type, ba, addType, 1, 1);
+}
+
+
+int var_getBytes4(
+    dlmsVARIANT* data,
+    DLMS_DATA_TYPE type,
+    gxByteBuffer* ba,
+    unsigned char addType,
+    unsigned char addArraySize,
+    unsigned char addStructureSize)
+{
+    int ret = 0, pos;
+    if ((type & DLMS_DATA_TYPE_BYREF) != 0)
+    {
+        return var_getBytes3(data, type & ~DLMS_DATA_TYPE_BYREF, ba, addType);
+    }
+    if (addType)
+    {
+        if ((ret = bb_setUInt8(ba, type)) != 0)
+        {
+            return ret;
+        }
+    }
+    switch (type)
+    {
+    case DLMS_DATA_TYPE_OCTET_STRING:
+            ret = var_setOctetString(ba, data);
+        break;
+    }
+    return ret;
+}
+
+
 //Get size in bytes.
 int var_getSize(DLMS_DATA_TYPE vt)
 {

@@ -372,14 +372,22 @@ int cl_methodLN(
 #else
         if (value != NULL && value->vt != DLMS_DATA_TYPE_NONE)
         {
-            if (value->vt == DLMS_DATA_TYPE_OCTET_STRING)
+            if ((value->vt == DLMS_DATA_TYPE_ARRAY || value->vt == DLMS_DATA_TYPE_STRUCTURE) &&
+                value->vt == DLMS_DATA_TYPE_OCTET_STRING)
             {
-                // Space is allocated for type and size
-                ret = bb_capacity(&data, 5 + bb_size(value->byteArr));
+                ret = bb_set(&data, value->byteArr->data, value->byteArr->size);
             }
-            if (ret == 0)
+            else
             {
-                // ret = dlms_setData(&data, value->vt, value);
+                if (value->vt == DLMS_DATA_TYPE_OCTET_STRING)
+                {
+                    // Space is allocated for type and size
+                    ret = bb_capacity(&data, 5 + bb_size(value->byteArr));
+                }
+                if (ret == 0)
+                {
+                    ret = dlms_setData(&data, value->vt, value);
+                }
             }
         }
 #endif // DLMS_IGNORE_MALLOC
@@ -439,15 +447,15 @@ int cl_getApplicationAssociationRequest(
     {
         pw = &settings->password;
     }
-    // ret = dlms_secure(settings,
-    // #ifndef DLMS_IGNORE_HIGH_GMAC
-    // settings->cipher.invocationCounter,
-    // #else
-    //     0,
-    // #endif //DLMS_IGNORE_HIGH_GMAC
-    //     & settings->stoCChallenge,
-    //     pw,
-    //     &challenge);
+    ret = dlms_secure(settings,
+    #ifndef DLMS_IGNORE_HIGH_GMAC
+    settings->cipher.invocationCounter,
+    #else
+        0,
+    #endif //DLMS_IGNORE_HIGH_GMAC
+        & settings->stoCChallenge,
+        pw,
+        &challenge);
 #if !defined(DLMS_IGNORE_HIGH_GMAC) || !defined(DLMS_IGNORE_HIGH_SHA256)
     bb_clear(&pw2);
 #endif //! defined(DLMS_IGNORE_HIGH_GMAC) || !defined(DLMS_IGNORE_HIGH_SHA256)
@@ -465,7 +473,7 @@ int cl_getApplicationAssociationRequest(
             }
         }
 #ifndef DLMS_IGNORE_MALLOC
-        // var_clear(&data);
+        var_clear(&data);
         bb_clear(&challenge);
 #endif // DLMS_IGNORE_MALLOC
     }
@@ -489,12 +497,12 @@ int cl_parseApplicationAssociationResponse(
     static unsigned char CHALLENGE_BUFF[MAX_CHALLENGE_SIZE];
     bb_attach(&value, tmp, 0, sizeof(tmp));
     bb_attach(&challenge, CHALLENGE_BUFF, 0, sizeof(CHALLENGE_BUFF));
-    // if ((ret = cosem_getOctetString(reply, &value)) != 0)
-    // {
-    //     settings->connected &= ~DLMS_CONNECTION_STATE_DLMS;
-    //     //ParseApplicationAssociationResponse failed. Server to Client do not match.
-    //     return DLMS_ERROR_CODE_AUTHENTICATION_FAILURE;
-    // }
+    if ((ret = cosem_getOctetString(reply, &value)) != 0)
+    {
+        settings->connected &= ~DLMS_CONNECTION_STATE_DLMS;
+        //ParseApplicationAssociationResponse failed. Server to Client do not match.
+        return DLMS_ERROR_CODE_AUTHENTICATION_FAILURE;
+    }
     empty = value.size == 0;
     if (!empty)
     {

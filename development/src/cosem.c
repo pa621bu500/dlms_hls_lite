@@ -98,3 +98,43 @@ int cosem_init4(
     }
     return 0;
 }
+
+
+int cosem_getOctetStringBase(gxByteBuffer* bb,
+    gxByteBuffer* value,
+    unsigned char type,
+    unsigned char exact)
+{
+    int ret;
+    unsigned char tmp;
+    uint16_t count;
+    if ((ret = bb_getUInt8(bb, &tmp)) != 0)
+    {
+        return ret;
+    }
+    if (tmp != type)
+    {
+        return DLMS_ERROR_CODE_UNMATCH_TYPE;
+    }
+    if ((ret = hlp_getObjectCount2(bb, &count)) != 0)
+    {
+        return ret;
+    }
+    if ((exact && count != bb_getCapacity(value)) ||
+        //Octet-string is too big.
+        count > bb_getCapacity(value))
+    {
+        return DLMS_ERROR_CODE_INCONSISTENT_CLASS_OR_OBJECT;
+    }
+    if ((ret = bb_clear(value)) != 0 ||
+        (ret = bb_set2(value, bb, bb->position, count)) != 0)
+    {
+        return ret;
+    }
+    return 0;
+}
+
+int cosem_getOctetString(gxByteBuffer* bb, gxByteBuffer* value)
+{
+    return cosem_getOctetStringBase(bb, value, DLMS_DATA_TYPE_OCTET_STRING, 0);
+}

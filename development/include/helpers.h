@@ -7,6 +7,8 @@
 
 static const unsigned char EMPTY_SYSTEM_TITLE[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
+#define GET_STR_FROM_EEPROM(x) (const char*)x
+
 #define GETU32(pt) (((uint32_t)(pt)[0] << 24) | \
                     ((uint32_t)(pt)[1] << 16) | \
                     ((uint32_t)(pt)[2] <<  8) | \

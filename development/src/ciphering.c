@@ -37,6 +37,10 @@ static void gxgcm_increaseBlockCounter(gxByteBuffer* nonceAndCounter,
 
 
 
+
+
+
+
 static int gxgcm_transformBlock(
     const DLMS_AES aes,
     const unsigned char* systemTitle,
@@ -201,11 +205,18 @@ static void gxgcm_getGHash(
         }
     }
 
-    //Plain text.
-    memset(X + available, 0, 16 - available);
-    available = 0;
-    gxgcm_xor(Y, X);
-    gxgcm_multiplyH(Y, H);
+    if (security == DLMS_SECURITY_AUTHENTICATION)
+    {
+        //Plain text.
+    }
+    else
+    {
+        //Plain text.
+        memset(X + available, 0, 16 - available);
+        available = 0;
+        gxgcm_xor(Y, X);
+        gxgcm_multiplyH(Y, H);
+    }
  
     for (pos = 0; pos < bb_available(value); pos += 16)
     {
@@ -235,6 +246,7 @@ static void gxgcm_getGHash(
     gxgcm_multiplyH(Y, H);
 }
 
+
 static int gxgcm_getTag(
     const DLMS_SECURITY security,
     const DLMS_AES aes,
@@ -252,10 +264,15 @@ static int gxgcm_getTag(
     uint32_t lenC = 0;
     //Length of the authenticated data.
     uint32_t lenA = (1 + AUTHENTICATION_KEY_SIZE(aes)) * 8;
-
-
-    lenC = 8 * bb_available(value);
-
+    if (security == DLMS_SECURITY_AUTHENTICATION)
+    {
+        //If data is not ciphered.
+        lenA += 8 * bb_available(value);
+    }
+    else
+    {
+        lenC = 8 * bb_available(value);
+    }
     unsigned char hash[16];
     gxgcm_getGHash(security, aes, tag, authenticationKey,
         value, lenA, lenC, &hash[0], key);
@@ -273,6 +290,47 @@ static int gxgcm_getTag(
     return ret;
 }
 
+static int cip_validateTag(
+    ciphering* settings,
+    const DLMS_AES aes,
+    unsigned char tag,
+    const unsigned char* systemTitle,
+    uint32_t frameCounter,
+    gxByteBuffer* input,
+    unsigned char* key)
+{
+    int ret;
+    unsigned char TAG[12];
+    gxByteBuffer ATag;
+    BB_ATTACH(ATag, TAG, 0);
+    if (bb_available(input) < 13)
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    else
+    {
+        input->size -= 12;
+        //Tag is converted to security.
+        if ((ret = gxgcm_getTag(tag & 0x30, aes, DLMS_COUNT_TYPE_TAG,
+            systemTitle, frameCounter,
+#ifdef DLMS_IGNORE_MALLOC
+            settings->authenticationKey,
+#else
+            settings->authenticationKey.data,
+#endif //DLMS_IGNORE_MALLOC
+            tag, input, &ATag, key)) == 0)
+        {
+            if (memcmp(input->data + input->size, ATag.data, 12) != 0)
+            {
+#ifdef DLMS_NOTIFY_AUTHENTICATION_ERROR
+                svr_authenticationError();
+#endif //DLMS_NOTIFY_AUTHENTICATION_ERROR
+                ret = DLMS_ERROR_CODE_INVALID_TAG;
+            }
+        }
+    }
+    return ret;
+}
 
 #ifndef DLMS_IGNORE_MALLOC
 int cip_crypt(
@@ -312,6 +370,50 @@ int cip_crypt(
     {
         switch (security)
         {
+             case DLMS_SECURITY_AUTHENTICATION:
+                #ifndef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+                    gxgcm_init(aes, key->data, gx_roundKeys);
+                #endif //DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+                            if (encrypt)
+                            {
+                                //The authentication tag is validated in a prior step.
+                                ret = gxgcm_getTag(security, aes, type, systemTitle,
+                                    frameCounter,
+                                    settings->authenticationKey.data,
+                                    tag, input, input,
+                #ifndef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+                                    gx_roundKeys
+                #else
+                #ifndef DLMS_IGNORE_MALLOC
+                                    key->data
+                #else
+                                    key
+                #endif //DLMS_IGNORE_MALLOC
+                #endif //DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+                                );
+                            }
+                            else
+                            {
+                                //Validate authentication tag.
+                                ret = cip_validateTag(
+                                    settings,
+                                    aes,
+                                    tag,
+                                    systemTitle,
+                                    frameCounter,
+                                    input,
+                #ifndef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+                                    gx_roundKeys
+                #else
+                #ifndef DLMS_IGNORE_MALLOC
+                                    key->data
+                #else
+                                    key
+                #endif //DLMS_IGNORE_MALLOC
+                #endif //DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+                                );
+                            }
+            break;
         case DLMS_SECURITY_AUTHENTICATION_ENCRYPTION:
         #ifndef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
         #ifndef DLMS_IGNORE_MALLOC
@@ -320,7 +422,26 @@ int cip_crypt(
             gxgcm_init(aes, key, gx_roundKeys);
             #endif //DLMS_IGNORE_MALLOC  
             #endif //DLMS_USE_AES_HARDWARE_SECURITY_MODULE
-
+            if (encrypt == 0)
+                        {
+                            ret = cip_validateTag(
+                                settings,
+                                aes,
+                                tag,
+                                systemTitle,
+                                frameCounter,
+                                input,
+            #ifndef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+                                gx_roundKeys
+            #else
+            #ifndef DLMS_IGNORE_MALLOC
+                                key->data
+            #else
+                                key
+            #endif //DLMS_IGNORE_MALLOC
+            #endif //DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+                            );
+                        }
             if (ret == 0 &&
                 (ret = gxgcm_transformBlock(aes, systemTitle, frameCounter,
                     input->data + input->position, bb_available(input), 2,
@@ -391,6 +512,91 @@ int cip_crypt(
     }
     return ret;
 }
+
+
+
+
+int cip_decrypt(
+    ciphering* settings,
+    unsigned char* title,
+    gxByteBuffer* key,
+    gxByteBuffer* data,
+    DLMS_SECURITY* security,
+    DLMS_SECURITY_SUITE* suite,
+    uint64_t* invocationCounter)
+{
+    unsigned char systemTitle[8];
+    uint16_t length;
+    int ret;
+    unsigned char ch;
+    uint32_t frameCounter, index = data->position;
+    DLMS_COMMAND cmd;
+    if (data == NULL || bb_available(data) < 2)
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    if ((ret = bb_getUInt8(data, &ch)) != 0)
+    {
+        return ret;
+    }
+
+    if ((ret = hlp_getObjectCount2(data, &length)) != 0)
+    {
+        return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
+    }
+    if ((ret = bb_getUInt8(data, &ch)) != 0)
+    {
+        return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
+    }
+    *security = (DLMS_SECURITY)(ch & 0x30);
+    if (suite != NULL)
+    {
+        *suite = (DLMS_SECURITY_SUITE)(ch & 0x3);
+        if (settings->security != DLMS_SECURITY_NONE &&
+            *suite != settings->suite)
+        {
+            return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
+        }
+    }
+    //If Key_Set or authentication or encryption is not used.
+    if ((settings->broadcast && (ch & 0x40) == 0) ||
+        (!settings->broadcast && (ch & 0x40) != 0) ||
+        *security == DLMS_SECURITY_NONE ||
+        //If security level is set.
+        (settings->security != DLMS_SECURITY_NONE &&
+            *security != settings->security))
+    {
+        return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
+    }
+    if ((ret = bb_getUInt32(data, &frameCounter)) != 0)
+    {
+        return ret;
+    }
+    if (invocationCounter != NULL)
+    {
+        *invocationCounter = frameCounter;
+    }
+    ret = cip_crypt(
+        settings,
+        *security,
+        DLMS_COUNT_TYPE_DATA,
+        frameCounter,
+        ch,
+        title,
+        key,
+        data,
+        0);
+    if (ret == 0)
+    {
+        //Remove ciphering part from the data.
+        ret = bb_move(data, data->position, index, bb_available(data));
+        data->position = index;
+    }
+    return ret;
+}
+
+
+
 
 
 #ifndef DLMS_IGNORE_MALLOC
