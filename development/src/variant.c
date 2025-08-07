@@ -52,6 +52,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
                     return DLMS_ERROR_CODE_INVALID_PARAMETER;
                 #endif //DLMS_IGNORE_STRING_CONVERTER
             }
+            case DLMS_DATA_TYPE_UINT32:
             case DLMS_DATA_TYPE_DELTA_UINT32:
             {
             hlp_uint64ToString(buff, 250, tmp.ulVal, 0);
