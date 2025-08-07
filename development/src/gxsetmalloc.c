@@ -39,3 +39,24 @@ int cosem_setRegister(gxRegister* object, unsigned char index, dlmsVARIANT* valu
     }
     return ret;
 }
+
+int cosem_setDisconnectControl(gxDisconnectControl* object, unsigned char index, dlmsVARIANT* value)
+{
+    if (index == 2)
+    {
+        object->outputState = value->boolVal;
+    }
+    // else if (index == 3)
+    // {
+    //     object->controlState = (DLMS_CONTROL_STATE)var_toInteger(value);
+    // }
+    // else if (index == 4)
+    // {
+    //     object->controlMode = (DLMS_CONTROL_MODE)var_toInteger(value);
+    // }
+    else
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return DLMS_ERROR_CODE_OK;
+}

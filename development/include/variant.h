@@ -6,11 +6,11 @@
 #include "bytebuffer.h"
 #include <stdint.h>
 #include "bitarray.h"
+#include <assert.h>
 
-
-
-
-
+#define V_VT(X)         ((X)->vt)
+#define GX_UNION(X, Y, Z) V_VT(X)=Z;(X)->Y
+#define GX_INT8(X) GX_UNION(&X, cVal, DLMS_DATA_TYPE_INT8)
 
 
    typedef struct
@@ -75,7 +75,9 @@
 #endif //DLMS_IGNORE_MALLOC
     } dlmsVARIANT;
 
+
 typedef dlmsVARIANT* dlmsVARIANT_PTR;
+
 
 
 int var_init(

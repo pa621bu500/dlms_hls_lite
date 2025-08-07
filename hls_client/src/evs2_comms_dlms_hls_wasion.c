@@ -8,6 +8,7 @@
 
 #include "../include/communication.h"
 #include "../include/connection.h"
+#include "../../development/include/variant.h"
 // #include "../../development/include/gxserializer.h"
 #include "../include/poll_result.h"
 #include "../../development/include/bytebuffer.h"
@@ -53,6 +54,30 @@ int parse_named_arg(char* arg, const char* prefix) {
     }
     return atoi(val_str);
  }
+
+ int relay_off(connection *connection)
+{
+    int ret;
+    gxDisconnectControl dc;
+    unsigned char ln[] = {0, 0, 96, 3, 10, 255}; // Logical Name for Disconnect Control
+    INIT_OBJECT(dc, DLMS_OBJECT_TYPE_DISCONNECT_CONTROL, ln);
+    dlmsVARIANT param;
+    GX_INT8(param) = 0;                                // parameter if needed by your meter
+    ret = com_method(connection, &dc.base, 1, &param); // method 1 = disconnect (relay off)
+    return ret;
+}
+
+int relay_on(connection *connection)
+{
+    int ret;
+    gxDisconnectControl dc;
+    unsigned char ln[] = {0, 0, 96, 3, 10, 255}; // Logical Name for Disconnect Control
+    INIT_OBJECT(dc, DLMS_OBJECT_TYPE_DISCONNECT_CONTROL, ln);
+    dlmsVARIANT param;
+    GX_INT8(param) = 0;                                // parameter if needed by your meter
+    ret = com_method(connection, &dc.base, 2, &param); // method 2 = reconnect (relay on)
+    return ret;
+}
 
 
 int connectMeter(int argc, char *argv[])
@@ -353,9 +378,9 @@ int readSerialPort(
                 if(comm_item==GET_METER_SN || comm_item==GET_RELAY_STATUS || comm_item==POLL_ITEM_TOTAL_ACTIVE_ENERGY){
                     ret = com_readValue_new(connection, obj, index, comm_item,poll_result);
                 }else if(comm_item==SET_RELAY_OFF){
-                    // ret = relay_off(connection);
+                    ret = relay_off(connection);
                 }else if(comm_item==SET_RELAY_ON){
-                    // ret = relay_on(connection);
+                    ret = relay_on(connection);
                 }
                 // ret = com_readValue(connection, obj, index);
             } while ((p = strchr(p2, ',')) != NULL);

@@ -9,12 +9,47 @@ int cl_snrmRequest(
     dlmsSettings *settings,
     message *messages);
 
+        int cl_methodLN(
+        dlmsSettings* settings,
+        const unsigned char* name,
+        DLMS_OBJECT_TYPE objectType,
+        unsigned char index,
+        dlmsVARIANT* data,
+        message* messages);
+
 int cl_getData2(
     dlmsSettings *settings,
     gxByteBuffer *reply,
     gxReplyData *data,
     gxReplyData *notify,
     unsigned char *isNotify);
+
+
+int cl_method(
+dlmsSettings* settings,
+gxObject* object,
+unsigned char index,
+dlmsVARIANT* data,
+message* messages);
+
+
+    int cl_method2(
+        dlmsSettings* settings,
+        gxObject* object,
+        unsigned char index,
+        unsigned char* value,
+        uint32_t length,
+        message* messages);
+
+            int cl_methodLN2(
+        dlmsSettings* settings,
+        unsigned char* name,
+        DLMS_OBJECT_TYPE objectType,
+        unsigned char index,
+        unsigned char* value,
+        uint32_t length,
+        message* messages);
+
 
 int cl_releaseRequest2(
 dlmsSettings* settings,

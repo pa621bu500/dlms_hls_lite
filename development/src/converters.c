@@ -21,6 +21,7 @@
 #endif //DLMS_IGNORE_MALLOC
 #include <string.h>
 #include "../include/helpers.h"
+#include "../include/errorcodes.h"
 
 int obj_DataToString(gxData* object, char** buff)
 {
@@ -53,6 +54,22 @@ const char* obj_getUnitAsString(unsigned char unit)
     return ret;
 }
 
+int obj_disconnectControlToString(gxDisconnectControl* object, char** buff)
+{
+    gxByteBuffer ba;
+    BYTE_BUFFER_INIT(&ba);
+    bb_addString(&ba, "Index: 2 Value: ");
+    bb_addIntAsString(&ba, object->outputState);
+    bb_addString(&ba, "\nIndex: 3 Value: ");
+    bb_addIntAsString(&ba, object->controlState);
+    bb_addString(&ba, "\nIndex: 4 Value: ");
+    bb_addIntAsString(&ba, object->controlMode);
+    bb_addString(&ba, "\n");
+    *buff = bb_toString(&ba);
+    bb_clear(&ba);
+    return 0;
+}
+
 int obj_RegisterToString(gxRegister* object, char** buff)
 {
     int ret;
@@ -83,5 +100,11 @@ int obj_toString(gxObject* object, char** buff)
         case DLMS_OBJECT_TYPE_REGISTER:
         ret = obj_RegisterToString((gxRegister*)object, buff);
         break;
+          case DLMS_OBJECT_TYPE_DISCONNECT_CONTROL:
+        ret = obj_disconnectControlToString((gxDisconnectControl*)object, buff);
+        break;
+         default: //Unknown type.
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
 }
+

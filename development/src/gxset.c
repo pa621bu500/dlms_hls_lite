@@ -65,7 +65,9 @@ int cosem_setValue(dlmsSettings* settings, gxValueEventArg* e)
         case DLMS_OBJECT_TYPE_REGISTER:
             ret = cosem_setRegister((gxRegister*)e->target, e->index, &e->value);
             break;
-    
+        case DLMS_OBJECT_TYPE_DISCONNECT_CONTROL:
+            ret = cosem_setDisconnectControl((gxDisconnectControl*)e->target, e->index, &e->value);
+            break;
         default:
             ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
