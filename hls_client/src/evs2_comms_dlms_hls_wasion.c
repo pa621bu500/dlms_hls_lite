@@ -185,12 +185,14 @@ int connectMeter(int argc, char *argv[])
     if(is_dev){
       printf("use com port number:%d\n", com_port_number);
     };
-    con.settings.authentication = DLMS_AUTHENTICATION_HIGH_GMAC;
+    con.settings.authentication = DLMS_AUTHENTICATION_NONE;
+    // con.settings.authentication = DLMS_AUTHENTICATION_HIGH_GMAC;
     bb_init(&con.settings.password);
     bb_addString(&con.settings.password, "00000000");
-    con.trace = GX_TRACE_LEVEL_INFO;
-    // con.trace = GX_TRACE_LEVEL_VERBOSE;
-    con.settings.cipher.security = DLMS_SECURITY_AUTHENTICATION_ENCRYPTION;
+    // con.trace = GX_TRACE_LEVEL_INFO;
+    con.trace = GX_TRACE_LEVEL_VERBOSE;
+     // con.settings.cipher.security = DLMS_SECURITY_AUTHENTICATION_ENCRYPTION;
+    con.settings.cipher.security = DLMS_SECURITY_NONE;
     bb_clear(&con.settings.cipher.authenticationKey);
     bb_addHexString(&con.settings.cipher.authenticationKey, "D0D1D2D3D4D5D6D7D8D9DADBDCDDDEDF");
     bb_clear(&con.settings.cipher.blockCipherKey);

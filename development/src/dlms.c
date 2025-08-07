@@ -20,6 +20,58 @@ static const unsigned char HDLC_FRAME_START_END = 0x7E;
 #define GET_AUTH_TAG(s)(s.broadcast ? 0x40 : 0) | DLMS_SECURITY_AUTHENTICATION | s.suite
 
 
+int getOctetString(gxByteBuffer *buff, gxDataInfo *info, unsigned char knownType, dlmsVARIANT *value)
+{
+    uint16_t len;
+    int ret = 0;
+    if (knownType)
+    {
+        len = (uint16_t)buff->size;
+    }
+    else
+    {
+        if (hlp_getObjectCount2(buff, &len) != 0)
+        {
+            return DLMS_ERROR_CODE_OUTOFMEMORY;
+        }
+        // If there is not enough data available.
+        if (buff->size - buff->position < len)
+        {
+            info->complete = 0;
+            return 0;
+        }
+    }
+#ifdef DLMS_IGNORE_MALLOC
+    if (value->vt != (DLMS_DATA_TYPE_OCTET_STRING | DLMS_DATA_TYPE_BYREF))
+    {
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    if (value->capacity < len)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+    value->size = len;
+    memcpy(value->pVal, buff->data + buff->position, len);
+    buff->position += len;
+#else
+    if (len == 0)
+    {
+        var_clear(value);
+    }
+    else
+    {
+        ret = var_addBytes(value, buff->data + buff->position, len);
+#if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+        buff->position += (uint32_t)len;
+#else
+        buff->position += (uint16_t)len;
+#endif
+    }
+#endif // DLMS_IGNORE_MALLOC
+    return ret;
+}
+
+
 int dlms_getData(gxByteBuffer* data, gxDataInfo* info, dlmsVARIANT* value)
 {
     unsigned char ch, knownType;
@@ -40,8 +92,11 @@ int dlms_getData(gxByteBuffer* data, gxDataInfo* info, dlmsVARIANT* value)
     switch (info->type & ~DLMS_DATA_TYPE_BYREF)
     {
         case DLMS_DATA_TYPE_UINT32:
-        ret = getUInt32(data, info, value);
-        break;
+            ret = getUInt32(data, info, value);
+            break;
+        case DLMS_DATA_TYPE_OCTET_STRING:
+            ret = getOctetString(data, info, knownType, value);
+            break;
     }
     if (ret == 0 && (value->vt & DLMS_DATA_TYPE_BYREF) == 0)
     {
@@ -64,6 +119,12 @@ int dlms_getValueFromData(dlmsSettings* settings,
     gxDataInfo info;
     di_init(&info);
     var_init(&value);
+    if (reply->dataValue.vt == DLMS_DATA_TYPE_ARRAY)
+    {
+        info.type = DLMS_DATA_TYPE_ARRAY;
+        info.count = (uint16_t)reply->totalCount;
+        info.index = (uint16_t)reply->data.size;
+    }
     index = (uint16_t)(reply->data.position);
     reply->data.position = reply->readPosition;
     if ((ret = dlms_getData(&reply->data, &info, &value)) != 0)
@@ -79,6 +140,29 @@ int dlms_getValueFromData(dlmsSettings* settings,
             reply->dataType = info.type;
             reply->dataValue = value;
             reply->totalCount = 0;
+            if (reply->command == DLMS_COMMAND_DATA_NOTIFICATION)
+            {
+                reply->readPosition = reply->data.position;
+            }
+        }else
+        {
+            if (reply->dataValue.vt == DLMS_DATA_TYPE_NONE)
+            {
+                reply->dataValue = value;
+            }
+            else
+            {
+            #if !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
+                            for (pos = 0; pos != value.Arr->size; ++pos)
+                            {
+                                if ((ret = va_getByIndex(value.Arr, pos, &tmp)) != 0)
+                                {
+                                    return ret;
+                                }
+                                // va_push(reply->dataValue.Arr, tmp);
+                            }
+            #endif //! defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
+            }
         }
 
         reply->readPosition = reply->data.position;
@@ -322,10 +406,10 @@ int dlms_getAddressBytes(
     {
         bb_setUInt16(bytes, (uint16_t)address);
     }
-    // else if (size == 4)
-    // {
-    //     bb_setUInt32(bytes, address);
-    // }
+    else if (size == 4)
+    {
+        bb_setUInt32(bytes, address);
+    }
     else
     {
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
@@ -671,6 +755,92 @@ int dlms_handleGetResponse(
             return ch;
         }
         ret = dlms_getDataFromBlock(&reply->data, 0);
+    }
+    else if (type == 2)
+    {
+        // GetResponsewithDataBlock
+        // Is Last block.
+        if ((ret = bb_getUInt8(&reply->data, &ch)) != 0)
+        {
+            return ret;
+        }
+        if (ch == 0)
+        {
+            reply->moreData = (DLMS_DATA_REQUEST_TYPES)(reply->moreData | DLMS_DATA_REQUEST_TYPES_BLOCK);
+        }
+        else
+        {
+            reply->moreData =
+                (DLMS_DATA_REQUEST_TYPES)(reply->moreData & ~DLMS_DATA_REQUEST_TYPES_BLOCK);
+        }
+        // Get Block number.
+        if ((ret = bb_getUInt32(&reply->data, &number)) != 0)
+        {
+            return ret;
+        }
+        // If meter's block index is zero based or Actaris is read.
+        // Actaris SL7000 might return wrong block index sometimes.
+        // It's not reseted to 1.
+        if (number != 1 && settings->blockIndex == 1)
+        {
+            settings->blockIndex = number;
+        }
+        else if (number != settings->blockIndex)
+        {
+            return DLMS_ERROR_CODE_DATA_BLOCK_NUMBER_INVALID;
+        }
+        // Get status.
+        if ((ret = bb_getUInt8(&reply->data, &ch)) != 0)
+        {
+            return ret;
+        }
+        if (ch != 0)
+        {
+            if ((ret = bb_getUInt8(&reply->data, &ch)) != 0)
+            {
+                return ret;
+            }
+            return ch;
+        }
+        else
+        {
+            // Get data size.
+            if ((ret = hlp_getObjectCount2(&reply->data, &count)) != 0)
+            {
+                return ret;
+            }
+            // if whole block is read.
+            if ((reply->moreData & DLMS_DATA_REQUEST_TYPES_FRAME) == 0)
+            {
+                // Check Block length.
+                if (count > (uint16_t)(bb_available(&reply->data)))
+                {
+                    return DLMS_ERROR_CODE_OUTOFMEMORY;
+                }
+                reply->command = DLMS_COMMAND_NONE;
+            }
+            if (count == 0)
+            {
+                // If meter sends empty data block.
+                reply->data.size = index;
+            }
+            else
+            {
+                if ((ret = dlms_getDataFromBlock(&reply->data, index)) != 0)
+                {
+                    return ret;
+                }
+            }
+            // If last packet and data is not try to peek.
+            if (reply->moreData == DLMS_DATA_REQUEST_TYPES_NONE)
+            {
+                if (!reply->peek)
+                {
+                    reply->data.position = 0;
+                    resetBlockIndex(settings);
+                }
+            }
+        }
     }
     else
     {

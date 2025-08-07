@@ -19,6 +19,66 @@ int var_changeType(dlmsVARIANT* value, DLMS_DATA_TYPE newType)
     }
 }
 
+int va_getByIndex(variantArray* arr, int index, dlmsVARIANT_PTR* item)
+{
+    if (index >= arr->size)
+    {
+        return DLMS_ERROR_CODE_OUTOFMEMORY;
+    }
+
+#ifdef DLMS_IGNORE_MALLOC
+    dlmsVARIANT_PTR p = (dlmsVARIANT_PTR)arr->data;
+    *item = &p[index];
+    return DLMS_ERROR_CODE_OK;
+#else
+    dlmsVARIANT** p = (dlmsVARIANT**)arr->data;
+    *item = p[index];
+    return DLMS_ERROR_CODE_OK;
+#endif //DLMS_IGNORE_MALLOC
+}
+
+
+int var_toString(dlmsVARIANT* item, gxByteBuffer* value)
+{
+    int ret = DLMS_ERROR_CODE_OK;
+    uint16_t pos;
+    if (item->vt == DLMS_DATA_TYPE_ARRAY || item->vt == DLMS_DATA_TYPE_STRUCTURE)
+    {
+        dlmsVARIANT* it;
+        bb_setInt8(value, item->vt == DLMS_DATA_TYPE_ARRAY ? '{' : '[');
+        for (pos = 0; pos != item->Arr->size; ++pos)
+        {
+            if (pos != 0)
+            {
+                bb_setInt8(value, ',');
+                bb_setInt8(value, ' ');
+            }
+            if ((ret = va_getByIndex(item->Arr, pos, &it)) != 0 ||
+                (ret = var_toString(it, value)) != 0)
+            {
+                break;
+            }
+        }
+        bb_setInt8(value, item->vt == DLMS_DATA_TYPE_ARRAY ? '}' : ']');
+    }
+    else
+    {
+        dlmsVARIANT tmp;
+        var_init(&tmp);
+        ret = var_copy(&tmp, item);
+        if (ret == 0)
+        {
+            ret = var_changeType(&tmp, DLMS_DATA_TYPE_STRING);
+            if (ret == 0 && tmp.strVal != NULL)
+            {
+                bb_set(value, tmp.strVal->data, tmp.strVal->size);
+            }
+        }
+        var_clear(&tmp);
+    }
+    return ret;
+}
+
 /**
 * Convert octetstring to DLMS bytes.
 *
@@ -203,7 +263,27 @@ int var_copy(dlmsVARIANT* target, dlmsVARIANT* source)
     return ret;
 }
 
-
+int var_addBytes(dlmsVARIANT* data, const unsigned char* value, uint16_t count)
+{
+    if (data->vt != DLMS_DATA_TYPE_OCTET_STRING)
+    {
+#ifdef DLMS_IGNORE_MALLOC
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+#else
+        var_clear(data);
+        data->byteArr = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
+        BYTE_BUFFER_INIT(data->byteArr);
+        data->vt = DLMS_DATA_TYPE_OCTET_STRING;
+#endif //DLMS_IGNORE_MALLOC
+    }
+#ifndef DLMS_IGNORE_MALLOC
+    else
+    {
+        bb_clear(data->byteArr);
+    }
+#endif //DLMS_IGNORE_MALLOC
+    return bb_set(data->byteArr, value, count);
+}
 
 
 int var_toInteger(dlmsVARIANT* data)

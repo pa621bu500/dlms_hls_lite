@@ -81,6 +81,22 @@ typedef dlmsVARIANT* dlmsVARIANT_PTR;
 int var_init(
 dlmsVARIANT* data);
 
+
+    int var_addBytes(
+        dlmsVARIANT* data,
+        const unsigned char* value,
+        uint16_t count);
+        
+    int va_getByIndex(
+        variantArray* arr,
+        int index,
+        dlmsVARIANT_PTR* item);
+
+
+            int va_push(
+        variantArray* arr,
+        dlmsVARIANT* item);
+
 //Clear variant.
 int var_clear(
 dlmsVARIANT* data);
@@ -92,6 +108,9 @@ DLMS_DATA_TYPE newType);
 int var_toInteger(
     dlmsVARIANT* data);
 
+    int var_toString(
+        dlmsVARIANT* item,
+        gxByteBuffer* value);
 
 int var_getBytes(
 dlmsVARIANT* data,

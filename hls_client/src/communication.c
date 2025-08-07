@@ -545,6 +545,11 @@ int com_readValue_new(connection *connection, gxObject *object, unsigned char in
     }
     if (connection->trace > GX_TRACE_LEVEL_WARNING)
     {
+        ret = obj_toString(object, &data);
+        if (ret != DLMS_ERROR_CODE_OK)
+        {
+            return ret;
+        }
         if (data != NULL)
         {
             // printf("%s\n", data);

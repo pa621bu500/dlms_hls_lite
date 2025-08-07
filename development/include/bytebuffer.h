@@ -20,9 +20,8 @@ typedef struct
 #endif
 } gxByteBuffer;
 
-
-    char* bb_toHexString(
-        gxByteBuffer* bb);
+char *bb_toHexString(
+    gxByteBuffer *bb);
 
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 unsigned char bb_compare(
@@ -54,6 +53,9 @@ int bb_insert(
 char bb_isAttached(
     gxByteBuffer *arr);
 
+char *bb_toString(
+    gxByteBuffer *bb);
+
 uint32_t bb_getCapacity(
     gxByteBuffer *arr);
 
@@ -63,6 +65,10 @@ int bb_clear(
 int bb_setUInt8(
     gxByteBuffer *bb,
     unsigned char item);
+
+int bb_setInt8(
+    gxByteBuffer *bb,
+    char item);
 
 int bb_getUInt8(
     gxByteBuffer *bb,
@@ -86,10 +92,9 @@ int bb_setUInt32(
     uint32_t item);
 
 int bb_get(
-gxByteBuffer* bb,
-unsigned char* value,
-uint32_t count);
-
+    gxByteBuffer *bb,
+    unsigned char *value,
+    uint32_t count);
 
 int bb_setUInt32ByIndex(
     gxByteBuffer *arr,

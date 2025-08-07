@@ -201,6 +201,25 @@ int bb_setUInt8(
     return ret;
 }
 
+int bb_setInt8(
+    gxByteBuffer* arr,
+    char item)
+{
+    return bb_setUInt8(arr, (unsigned char)item);
+}
+
+char* bb_toString(
+    gxByteBuffer* arr)
+{
+    char* buff = (char*)gxmalloc(arr->size + 1);
+    if (buff != NULL)
+    {
+        memcpy(buff, arr->data, arr->size);
+        *(buff + arr->size) = 0;
+    }
+    return buff;
+}
+
 
 int bb_get(
     gxByteBuffer* bb,
