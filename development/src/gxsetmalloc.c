@@ -23,3 +23,19 @@ int cosem_setData(gxValueEventArg* e)
     return ret;
 }
 #endif //DLMS_IGNORE_DATA
+
+
+int cosem_setRegister(gxRegister* object, unsigned char index, dlmsVARIANT* value)
+{
+    int ret = 0;
+    if (index == 2)
+    {
+        ret = var_copy(&object->value, value);
+    }
+   
+    else
+    {
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    return ret;
+}

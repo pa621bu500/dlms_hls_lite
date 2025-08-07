@@ -86,7 +86,7 @@ typedef enum
     // DLMS_ERROR_CODE_SEND_FAILED,
     // // Data receive failed.
     DLMS_ERROR_CODE_RECEIVE_FAILED,
-    // DLMS_ERROR_CODE_NOT_IMPLEMENTED,
+    DLMS_ERROR_CODE_NOT_IMPLEMENTED,
     // // Secure connection is not supported.
     // DLMS_ERROR_CODE_DLMS_SECURITY_NOT_IMPLEMENTED,
     // // Invalid DLMS command.

@@ -37,24 +37,37 @@ int obj_DataToString(gxData* object, char** buff)
     return ret;
 }
 
-// int obj_RegisterToString(gxRegister* object, char** buff)
-// {
-//     int ret;
-//     gxByteBuffer ba;
-//     BYTE_BUFFER_INIT(&ba);
-//     if ((ret = bb_addString(&ba, GET_STR_FROM_EEPROM("Index: 3 Value: Scaler: "))) == 0 &&
-//         (ret = bb_addDoubleAsString(&ba, hlp_getScaler(object->scaler))) == 0 &&
-//         (ret = bb_addString(&ba, GET_STR_FROM_EEPROM(" Unit: "))) == 0 &&
-//         (ret = bb_addString(&ba, obj_getUnitAsString(object->unit))) == 0 &&
-//         (ret = bb_addString(&ba, GET_STR_FROM_EEPROM("\nIndex: 2 Value: "))) == 0 &&
-//         (ret = var_toString(&object->value, &ba)) == 0 &&
-//         (ret = bb_addString(&ba, GET_STR_FROM_EEPROM("\n"))) == 0)
-//     {
-//         *buff = bb_toString(&ba);
-//     }
-//     bb_clear(&ba);
-//     return ret;
-// }
+
+const char* obj_getUnitAsString(unsigned char unit)
+{
+    const char* ret;
+    switch (unit)
+    {
+        case DLMS_UNIT_NONE:
+        ret = GET_STR_FROM_EEPROM("None");
+        break;
+
+    }
+}
+
+int obj_RegisterToString(gxRegister* object, char** buff)
+{
+    int ret;
+    gxByteBuffer ba;
+    BYTE_BUFFER_INIT(&ba);
+    if ((ret = bb_addString(&ba, GET_STR_FROM_EEPROM("Index: 3 Value: Scaler: "))) == 0 &&
+        (ret = bb_addDoubleAsString(&ba, hlp_getScaler(object->scaler))) == 0 &&
+        (ret = bb_addString(&ba, GET_STR_FROM_EEPROM(" Unit: "))) == 0 &&
+        (ret = bb_addString(&ba, obj_getUnitAsString(object->unit))) == 0 &&
+        (ret = bb_addString(&ba, GET_STR_FROM_EEPROM("\nIndex: 2 Value: "))) == 0 &&
+        (ret = var_toString(&object->value, &ba)) == 0 &&
+        (ret = bb_addString(&ba, GET_STR_FROM_EEPROM("\n"))) == 0)
+    {
+        *buff = bb_toString(&ba);
+    }
+    bb_clear(&ba);
+    return ret;
+}
 
 int obj_toString(gxObject* object, char** buff)
 {
@@ -65,7 +78,7 @@ int obj_toString(gxObject* object, char** buff)
         ret = obj_DataToString((gxData*)object, buff);
         break;
         case DLMS_OBJECT_TYPE_REGISTER:
-        // ret = obj_RegisterToString((gxRegister*)object, buff);
+        ret = obj_RegisterToString((gxRegister*)object, buff);
         break;
     }
 }

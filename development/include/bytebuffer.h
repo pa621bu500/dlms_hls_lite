@@ -50,6 +50,21 @@ int bb_insert(
     uint16_t index);
 #endif
 
+    int bb_addDoubleAsString(
+        gxByteBuffer* ba,
+        double value);
+
+
+int bb_addIntAsString(
+gxByteBuffer* ba,
+int value);
+
+    int bb_addIntAsString2(
+        gxByteBuffer* ba,
+        int value,
+        unsigned char digits);
+
+
 char bb_isAttached(
     gxByteBuffer *arr);
 

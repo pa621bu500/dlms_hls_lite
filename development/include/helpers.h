@@ -41,9 +41,16 @@ unsigned char hlp_swapBits(unsigned char value);
 
 int hlp_getLogicalNameToString(const unsigned char value[6], char* ln);
 
+    int hlp_uint64ToString(
+        char* str,
+        int bufsize,
+        uint64_t value,
+        unsigned char digits);
+
 int hlp_getObjectCount2(
 gxByteBuffer* buff,
 uint16_t* count);
 
+ double hlp_getScaler(int scaler);
 
 #endif

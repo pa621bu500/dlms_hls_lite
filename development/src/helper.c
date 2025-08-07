@@ -357,6 +357,79 @@ int hlp_getObjectCount2(gxByteBuffer* buff, uint16_t* count)
     return ret;
 }
 
+int hlp_uint64ToString(char* str, int bufsize, uint64_t value, unsigned char digits)
+{
+    int cnt = 0;
+    uint64_t val = value;
+    if (digits != 0)
+    {
+        --digits;
+    }
+    //Find length.
+    while ((val = (val / 10)) > 0)
+    {
+        ++str;
+        if (digits != 0)
+        {
+            --digits;
+        }
+    }
+    *(str + digits + 1) = '\0';
+    while (digits != 0)
+    {
+        if (bufsize < 1)
+        {
+            return -1;
+        }
+        *str = '0';
+        --digits;
+        --bufsize;
+        ++str;
+        ++cnt;
+    }
+    do
+    {
+        if (bufsize < 1)
+        {
+            return -1;
+        }
+        *str = (value % 10) + '0';
+        value /= 10;
+        if (value != 0)
+        {
+            --str;
+        }
+        --bufsize;
+        ++cnt;
+    } while (value != 0);
+    return cnt;
+}
+
+
+double hlp_getScaler(int scaler)
+{
+    //If OS
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+    return pow((float)10, scaler);
+#else
+    double ret = 1;
+    if (scaler > 0)
+    {
+        while (scaler--)
+        {
+            ret *= 10;
+        }
+    }
+    else if (scaler < 0)
+    {
+        while (scaler++)
+        {
+            ret /= 10;
+        }
+    }
+    return ret;
+#endif
+}
 
 int hlp_getLogicalNameToString(const unsigned char value[6], char* ln)
 {

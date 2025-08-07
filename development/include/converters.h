@@ -11,5 +11,9 @@ int obj_toString(
 gxObject* object,
 char** buff);
 
+    const char* obj_getUnitAsString(
+        unsigned char unit);
+
+
 
 #endif

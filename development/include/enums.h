@@ -196,6 +196,11 @@ typedef enum
 
 typedef enum
 {
+    DLMS_UNIT_NONE = 0,
+}DLMS_UNIT;
+
+typedef enum
+{
     DLMS_GET_COMMAND_TYPE_NORMAL = 1,
 } DLMS_GET_COMMAND_TYPE;
 

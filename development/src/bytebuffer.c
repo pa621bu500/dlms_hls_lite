@@ -321,6 +321,45 @@ int bb_setUInt16(
     return ret;
 }
 
+
+int bb_addDoubleAsString(
+    gxByteBuffer* bb,
+    double value)
+{
+    char buff[20];
+    //Show as integer value if there is no fractal part.
+    if (value - (int32_t)value == 0)
+    {
+        return bb_addIntAsString(bb, (int)value);
+    }
+    else
+    {
+#if _MSC_VER > 1000
+        sprintf_s(buff, 20, "%lf", value);
+#else
+        sprintf(buff, "%lf", value);
+#endif
+        return bb_addString(bb, buff);
+}
+}
+
+int bb_addIntAsString(gxByteBuffer* bb, int value)
+{
+    return bb_addIntAsString2(bb, value, 0);
+}
+
+int bb_addIntAsString2(gxByteBuffer* bb, int value, unsigned char digits)
+{
+    int ret;
+    char str[20];
+    hlp_intToString(str, 20, value, 1, digits);
+    if ((ret = bb_addString(bb, str)) != 0)
+    {
+
+    }
+    return ret;
+}
+
 int bb_addString(
     gxByteBuffer *arr,
     const char *value)
