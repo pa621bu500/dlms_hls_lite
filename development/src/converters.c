@@ -46,8 +46,11 @@ const char* obj_getUnitAsString(unsigned char unit)
         case DLMS_UNIT_NONE:
         ret = GET_STR_FROM_EEPROM("None");
         break;
-
+        default:
+        ret = NULL;
+        break;
     }
+    return ret;
 }
 
 int obj_RegisterToString(gxRegister* object, char** buff)
