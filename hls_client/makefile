@@ -7,17 +7,20 @@ CC       = gcc
 # compiling flags here
 # for release
 # CFLAGS   = -std=gnu99 -Wall -I.
-# for debug
-# CFLAGS=-g -I -Wall 
-CFLAGS = -g -I$(SRCDIR) -I../include -Wall
 
 LINKER   = gcc -o
-
 # linking flags here
 # for release
 # LFLAGS   = -L../development/lib
+
 # for debug
-LFLAGS= -L../development/lib -lpthread 
+# CFLAGS=-g -I -Wall 
+# CFLAGS = -g -I$(SRCDIR) -I../include -Wall
+# LFLAGS= -L../development/lib -lpthread 
+
+#actual release mode
+CFLAGS = -Os -flto -I$(SRCDIR) -I../include -Wall
+LFLAGS = -L../development/lib -lpthread -s -flto
 
 # change these to set the proper directories where each files should be
 

@@ -106,5 +106,6 @@ int obj_toString(gxObject* object, char** buff)
          default: //Unknown type.
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
+    return ret;
 }
 

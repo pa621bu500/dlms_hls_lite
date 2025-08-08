@@ -61,7 +61,7 @@ int cosem_setValue(dlmsSettings* settings, gxValueEventArg* e)
     {
         case DLMS_OBJECT_TYPE_DATA:
             ret = cosem_setData(e);
-        break;
+            break;
         case DLMS_OBJECT_TYPE_REGISTER:
             ret = cosem_setRegister((gxRegister*)e->target, e->index, &e->value);
             break;

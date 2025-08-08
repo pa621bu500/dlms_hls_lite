@@ -71,6 +71,32 @@ int getOctetString(gxByteBuffer *buff, gxDataInfo *info, unsigned char knownType
     return ret;
 }
 
+static int getBool(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT *value)
+{
+    int ret;
+    unsigned char ch;
+    // If there is not enough data available.
+    if (buff->size - buff->position < 1)
+    {
+        info->complete = 0;
+        return 0;
+    }
+    if ((ret = bb_getUInt8(buff, &ch)) != 0)
+    {
+        return ret;
+    }
+    if ((value->vt & DLMS_DATA_TYPE_BYREF) == 0)
+    {
+        value->vt = DLMS_DATA_TYPE_BOOLEAN;
+        value->boolVal = ch != 0;
+    }
+    else
+    {
+        *value->pboolVal = ch != 0;
+    }
+    return 0;
+}
+
 
 int dlms_getData(gxByteBuffer* data, gxDataInfo* info, dlmsVARIANT* value)
 {
@@ -97,6 +123,11 @@ int dlms_getData(gxByteBuffer* data, gxDataInfo* info, dlmsVARIANT* value)
         case DLMS_DATA_TYPE_OCTET_STRING:
             ret = getOctetString(data, info, knownType, value);
             break;
+        case DLMS_DATA_TYPE_BOOLEAN:
+            {
+                ret = getBool(data, info, value);
+                break;
+            }
     }
     if (ret == 0 && (value->vt & DLMS_DATA_TYPE_BYREF) == 0)
     {

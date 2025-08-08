@@ -54,6 +54,9 @@ uint16_t cosem_getObjectSize(DLMS_OBJECT_TYPE type)
             size = sizeof(gxRegister);
             break;
         #endif //DLMS_IGNORE_REGISTER
+        case DLMS_OBJECT_TYPE_DISCONNECT_CONTROL:
+        size = sizeof(gxDisconnectControl);
+        break;
         default:
            return 0;
         
@@ -92,6 +95,9 @@ int cosem_init4(
     case DLMS_OBJECT_TYPE_DATA:
         break;
     case DLMS_OBJECT_TYPE_REGISTER:
+        break;
+    case DLMS_OBJECT_TYPE_DISCONNECT_CONTROL:
+        ((gxObject*)object)->version = 1;
         break;
     default:
         break;

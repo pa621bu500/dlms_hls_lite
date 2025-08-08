@@ -4,7 +4,13 @@ TARGET   = libgurux_dlms_c.a
 #arm-none-eabi-gcc for embedded ARM systems.
 CC       = gcc 
 # compiling flags here
-CFLAGS   = -g -std=c99 -Wall -fPIC -DDLMS_IGNORE_SERVER
+# CFLAGS   = -g -std=c99 -Wall -fPIC -DDLMS_IGNORE_SERVER
+# LFLAGS   = 
+
+#release version flags
+CFLAGS = -Os -flto -std=c99 -Wall -fPIC -DDLMS_IGNORE_SERVER
+LFLAGS = -s -flto
+
 #Add this if used on microcontroller. -DGX_DLMS_MICROCONTROLLER
 #Add this if you don't want to use malloc. -DDLMS_IGNORE_MALLOC
 #Add this if you don't want to use object pointers. -DDLMS_IGNORE_OBJECT_POINTERS
@@ -13,7 +19,7 @@ CFLAGS   = -g -std=c99 -Wall -fPIC -DDLMS_IGNORE_SERVER
 
 LINKER   = ar rvs
 # linking flags here
-LFLAGS   = 
+
 
 # change these to set the proper directories where each files shoould be
 SRCDIR   = src
