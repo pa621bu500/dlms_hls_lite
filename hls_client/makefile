@@ -15,12 +15,12 @@ LINKER   = gcc -o
 
 # for debug
 # CFLAGS=-g -I -Wall 
-# CFLAGS = -g -I$(SRCDIR) -I../include -Wall
-# LFLAGS= -L../development/lib -lpthread 
+CFLAGS = -g -I$(SRCDIR) -I../include -Wall
+LFLAGS= -L../development/lib -lpthread 
 
 #actual release mode
-CFLAGS = -Os -flto -I$(SRCDIR) -I../include -Wall
-LFLAGS = -L../development/lib -lpthread -s -flto
+# CFLAGS = -Os -flto -I$(SRCDIR) -I../include -Wall
+# LFLAGS = -L../development/lib -lpthread -s -flto
 
 # change these to set the proper directories where each files should be
 

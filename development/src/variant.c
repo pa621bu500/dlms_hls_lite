@@ -136,6 +136,7 @@ int var_changeType(dlmsVARIANT* value, DLMS_DATA_TYPE newType)
         
 
     }
+    return DLMS_ERROR_CODE_OK;
 }
 
 int va_getByIndex(variantArray* arr, int index, dlmsVARIANT_PTR* item)

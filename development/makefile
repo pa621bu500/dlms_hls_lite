@@ -4,12 +4,12 @@ TARGET   = libgurux_dlms_c.a
 #arm-none-eabi-gcc for embedded ARM systems.
 CC       = gcc 
 # compiling flags here
-# CFLAGS   = -g -std=c99 -Wall -fPIC -DDLMS_IGNORE_SERVER
-# LFLAGS   = 
+CFLAGS   = -g -std=c99 -Wall -fPIC -DDLMS_IGNORE_SERVER
+LFLAGS   = 
 
 #release version flags
-CFLAGS = -Os -flto -std=c99 -Wall -fPIC -DDLMS_IGNORE_SERVER
-LFLAGS = -s -flto
+# CFLAGS = -Os -flto -std=c99 -Wall -fPIC -DDLMS_IGNORE_SERVER
+# LFLAGS = -s -flto
 
 #Add this if used on microcontroller. -DGX_DLMS_MICROCONTROLLER
 #Add this if you don't want to use malloc. -DDLMS_IGNORE_MALLOC
