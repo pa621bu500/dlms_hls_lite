@@ -448,16 +448,43 @@ int var_clear(dlmsVARIANT* data)
     //Referenced values are not cleared. User must do it.
     if ((data->vt & DLMS_DATA_TYPE_BYREF) != 0)
     {
-        return 0;
+        data->llVal = 0;
+        data->vt = DLMS_DATA_TYPE_NONE;
     }
     switch (data->vt)
     {
+    if ((data->vt & DLMS_DATA_TYPE_BYREF) != 0)
+    {
+        return 0;
+    }
+    case DLMS_DATA_TYPE_OCTET_STRING:
+        if (data->byteArr != NULL)
+        {
+            bb_clear(data->byteArr);
+            if (!bb_isAttached(data->byteArr))
+            {
+                gxfree(data->byteArr);
+                data->byteArr = NULL;
+            }
+        }
+        break;
     case DLMS_DATA_TYPE_STRING:
         if (data->strVal != NULL)
         {
             bb_clear(data->strVal);
             gxfree(data->strVal);
         }
+        break;
+
+    case DLMS_DATA_TYPE_ARRAY:
+    case DLMS_DATA_TYPE_STRUCTURE:
+        printf("reached here");
+        // if (data->Arr != NULL)
+        // {
+        //     va_clear(data->Arr);
+        //     gxfree(data->Arr);
+        //     data->Arr = NULL;
+        // }
         break;
     default:
         data->llVal = 0;
