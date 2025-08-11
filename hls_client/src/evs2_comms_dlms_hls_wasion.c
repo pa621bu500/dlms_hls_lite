@@ -29,9 +29,10 @@ const int supported_batches[] = {2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024,
 const char *invalid_arg_prompt = "Invalid arguments. Usage: %s --model=<4char> --batch=<yyyy> --mac=<int> --comm_item=<int> [--usb_offset=<int>]\n";
 bool is_dev = false;
 char model[5] = "";
+char *security_str="low";
 bool is_supported_model = false;
 bool is_supported_batch = false;
-bool useHls = 1;
+bool useHls = 0;
 bool debug=1;
 int batch_year = -1;
 int dest_mac = -1;
@@ -42,6 +43,7 @@ bool arg_found_batch = false;
 bool arg_found_mac = false;
 bool arg_found_comm_item = false;
 bool arg_found_usb_offset = false;
+bool arg_found_security = false;
 bool arg_found_env = false;
 
 int parse_named_arg(char* arg, const char* prefix) {
@@ -166,6 +168,15 @@ int connectMeter(int argc, char *argv[])
                 printf("usb_offset:%d\n", usb_offset);
             };
         }
+        else if (strncmp(argv[i], "--security=", 11) == 0)
+        {
+            security_str = argv[i] + 11; // points to what comes after "--security="
+            useHls=1;
+            if (is_dev)
+            {
+                printf("Security level::%d\n", security_str);
+            };
+        }
     }
     if (!arg_found_model)
     {
@@ -222,7 +233,7 @@ int connectMeter(int argc, char *argv[])
     }
 
     con.trace = GX_TRACE_LEVEL_INFO;
-    if(debug){
+    if(is_dev){
         con.trace = GX_TRACE_LEVEL_VERBOSE;
     }
    

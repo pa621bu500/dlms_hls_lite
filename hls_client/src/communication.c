@@ -503,10 +503,9 @@ int com_updateInvocationCounter(
                   (ret = com_readDataBlock(connection, &messages, &reply)) != 0 ||
                   (ret = cl_parseUAResponse(&connection->settings, &reply.data)) != 0)
         {
-            printf("Sss");
-            //   bb_clear(&challenge);
-            // mes_clear(&messages);
-            // reply_clear(&reply);
+            bb_clear(&challenge);
+            mes_clear(&messages);
+            reply_clear(&reply);
         }
         mes_clear(&messages);
         reply_clear(&reply);
