@@ -744,6 +744,9 @@ int dlms_verifyInvokeId(dlmsSettings* settings, gxReplyData* reply)
     return 0;
 }
 
+
+
+
 int dlms_handleGetResponse(
     dlmsSettings* settings,
     gxReplyData* reply,
@@ -1080,6 +1083,96 @@ int dlms_getHDLCAddress(
     return DLMS_ERROR_CODE_OK;
 }
 
+int dlms_handleMethodResponse(
+    dlmsSettings *settings,
+    gxReplyData *data)
+{
+    int ret;
+    unsigned char ch, type;
+    // Get type.
+    if ((ret = bb_getUInt8(&data->data, &type)) != 0)
+    {
+        return ret;
+    }
+    // Get invoke ID and priority.
+    if ((ret = bb_getUInt8(&data->data, &data->invokeId)) != 0)
+    {
+        return ret;
+    }
+    if ((ret = dlms_verifyInvokeId(settings, data)) != 0)
+    {
+        return ret;
+    }
+    // Action-Response-Normal
+    if (type == 1)
+    {
+        // Get Action-Result
+        if ((ret = bb_getUInt8(&data->data, &ch)) != 0)
+        {
+            return ret;
+        }
+        if (ch != 0)
+        {
+            return ch;
+        }
+        resetBlockIndex(settings);
+        // Get data if exists. Some meters do not return here anything.
+        if (data->data.position < data->data.size)
+        {
+            // Get-Data-Result.
+            if ((ret = bb_getUInt8(&data->data, &ch)) != 0)
+            {
+                return ret;
+            }
+            // If data.
+            if (ch == 0)
+            {
+                // return dlms_getDataFromBlock(&data->data, 0);
+            }
+            else if (ch == 1) // Data-Access-Result
+            {
+                // Get Data-Access-Result
+                if ((ret = bb_getUInt8(&data->data, &ch)) != 0)
+                {
+                    return ret;
+                }
+                if (ch != 0)
+                {
+                    if (ch == 9)
+                    {
+                        // Handle Texas Instrument missing byte here.
+                        if ((ret = bb_getUInt8ByIndex(&data->data, data->data.position, &ch)) != 0)
+                        {
+                            return ret;
+                        }
+                        if (ch == 16)
+                        {
+                            --data->data.position;
+                            // return dlms_getDataFromBlock(&data->data, 0);
+                        }
+                    }
+                    if ((ret = bb_getUInt8(&data->data, &ch)) != 0)
+                    {
+                        return ret;
+                    }
+                    return ch;
+                }
+                return dlms_getDataFromBlock(&data->data, 0);
+            }
+            else
+            {
+                return DLMS_ERROR_CODE_INVALID_TAG;
+            }
+        }
+    }
+    else
+    {
+        return DLMS_ERROR_CODE_INVALID_COMMAND;
+    }
+    return DLMS_ERROR_CODE_OK;
+}
+
+
 //Return DLMS_ERROR_CODE_FALSE if LLC bytes are not included.
 int dlms_checkLLCBytes(dlmsSettings* settings, gxByteBuffer* data)
 {
@@ -1167,9 +1260,9 @@ int dlms_getPdu(
 //             ret = dlms_handleWriteResponse(data);
 //             break;
 // #endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
-//         case DLMS_COMMAND_METHOD_RESPONSE:
-//             ret = dlms_handleMethodResponse(settings, data);
-//             break;
+        case DLMS_COMMAND_METHOD_RESPONSE:
+            ret = dlms_handleMethodResponse(settings, data);
+            break;
 //         case DLMS_COMMAND_GENERAL_BLOCK_TRANSFER:
 //             ret = dlms_handleGbt(settings, data);
 //             break;
@@ -1217,20 +1310,12 @@ int dlms_getPdu(
 //             // Server handles this.
 //             break;
 // #endif //!defined(DLMS_IGNORE_SERVER)
-// #if !defined(DLMS_IGNORE_CLIENT)
-//         case DLMS_COMMAND_GLO_READ_RESPONSE:
-//         case DLMS_COMMAND_GLO_WRITE_RESPONSE:
-//         case DLMS_COMMAND_GLO_GET_RESPONSE:
-//         case DLMS_COMMAND_GLO_SET_RESPONSE:
-//         case DLMS_COMMAND_GLO_METHOD_RESPONSE:
-//         case DLMS_COMMAND_DED_GET_RESPONSE:
-//         case DLMS_COMMAND_DED_SET_RESPONSE:
-//         case DLMS_COMMAND_DED_EVENT_NOTIFICATION:
-//         case DLMS_COMMAND_DED_METHOD_RESPONSE:
-//             // If all frames are read.
-//             ret = dlms_handleGloDedResponse(settings, data, index);
-//             break;
-// #endif // !defined(DLMS_IGNORE_CLIENT)
+#if !defined(DLMS_IGNORE_CLIENT)
+        case DLMS_COMMAND_GLO_METHOD_RESPONSE:
+            // If all frames are read.
+            ret = dlms_handleGloDedResponse(settings, data, index);
+            break;
+#endif // !defined(DLMS_IGNORE_CLIENT)
 //         case DLMS_COMMAND_GENERAL_GLO_CIPHERING:
 //         case DLMS_COMMAND_GENERAL_DED_CIPHERING:
 // #if !defined(DLMS_IGNORE_SERVER)
@@ -1374,6 +1459,92 @@ int dlms_getPdu(
 // #endif //!defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
     return ret;
 }
+
+
+#if !defined(DLMS_IGNORE_CLIENT)
+int dlms_handleGloDedResponse(dlmsSettings *settings,
+                              gxReplyData *data, uint32_t index)
+{
+#ifdef DLMS_IGNORE_HIGH_GMAC
+    return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
+#else
+    int ret = 0;
+    DLMS_SECURITY_SUITE suite;
+    uint64_t invocationCounter;
+    if ((data->moreData & DLMS_DATA_REQUEST_TYPES_FRAME) == 0)
+    {
+        DLMS_SECURITY security;
+        --data->data.position;
+        data->data.position = index;
+        if ((settings->connected & DLMS_CONNECTION_STATE_DLMS) != 0 && dlms_useDedicatedKey(settings))
+        {
+            if ((ret = cip_decrypt(&settings->cipher,
+                                   settings->sourceSystemTitle,
+                                   settings->cipher.dedicatedKey,
+                                   &data->data,
+                                   &security,
+                                   &suite,
+                                   &invocationCounter)) != 0)
+            {
+                return ret;
+            }
+        }
+        else
+        {
+            if ((ret = cip_decrypt(&settings->cipher,
+                                   settings->sourceSystemTitle,
+#ifndef DLMS_IGNORE_MALLOC
+                                   &settings->cipher.blockCipherKey,
+#else
+                                   settings->cipher.blockCipherKey,
+#endif // DLMS_IGNORE_MALLOC
+                                   &data->data,
+                                   &security,
+                                   &suite,
+                                   &invocationCounter)) != 0)
+            {
+                return ret;
+            }
+        }
+#ifdef DLMS_TRACE_PDU
+        if (ret == 0)
+        {
+            cip_tracePdu(0, &data->data);
+        }
+#endif // DLMS_TRACE_PDU
+       // If target is sending data ciphered using different security policy.
+        if (settings->cipher.security != security)
+        {
+            return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
+        }
+#ifdef DLMS_INVOCATION_COUNTER_VALIDATOR
+        if (svr_validateInvocationCounter(settings, invocationCounter) != 0)
+        {
+            return DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL;
+        }
+#else
+        if (settings->expectedInvocationCounter != NULL)
+        {
+            if (invocationCounter <= *settings->expectedInvocationCounter)
+            {
+                // return DLMS_ERROR_CODE_INVOCATION_COUNTER_TOO_SMALL;
+            }
+            // Update IC.
+#ifdef DLMS_COSEM_INVOCATION_COUNTER_SIZE64
+            *settings->expectedInvocationCounter = (invocationCounter);
+#else
+            *settings->expectedInvocationCounter = (uint32_t)(invocationCounter);
+#endif // DLMS_COSEM_INVOCATION_COUNTER_SIZE64
+        }
+#endif // DLMS_INVOCATION_COUNTER_VALIDATOR
+        data->command = DLMS_COMMAND_NONE;
+        ret = dlms_getPdu(settings, data, 0);
+        data->cipherIndex = (uint16_t)data->data.size;
+    }
+    return ret;
+#endif // DLMS_IGNORE_HIGH_GMAC
+}
+#endif //! defined(DLMS_IGNORE_CLIENT)
 
 int dlms_checkHdlcAddress(
     unsigned char server,

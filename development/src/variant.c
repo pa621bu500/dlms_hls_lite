@@ -106,11 +106,15 @@ int var_changeType(dlmsVARIANT* value, DLMS_DATA_TYPE newType)
     {
         return var_clear(value);
     }
+     if (value->vt == DLMS_DATA_TYPE_ARRAY && newType == DLMS_DATA_TYPE_OCTET_STRING)
+    {
+        return DLMS_ERROR_CODE_OK;
+    }
      if (value->vt == DLMS_DATA_TYPE_STRING)
     {
         return convert(value, newType);
     }
-     switch (newType)
+    switch (newType)
     {
     case DLMS_DATA_TYPE_STRING:
     case DLMS_DATA_TYPE_UINT32:

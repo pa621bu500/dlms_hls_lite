@@ -94,7 +94,7 @@ typedef enum
     // //  This means that the command is unknown.
     // //  THe code might be ignored with compiler flag.
     // // See DLMS_IGNORE values.
-    // DLMS_ERROR_CODE_INVALID_COMMAND,
+    DLMS_ERROR_CODE_INVALID_COMMAND,
     // // Invalid Block number.
     // DLMS_ERROR_CODE_INVALID_BLOCK_NUMBER,
     // // Invalid parameter.

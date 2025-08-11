@@ -4,13 +4,12 @@
 #include "../include/ciphering.h"
 #include "../include/helpers.h"
 
-static const unsigned char DEFAULT_BROADCAST_BLOCK_CIPHER_KEY[] = { 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA };
-static const unsigned char DEFAULT_BLOCK_CIPHER_KEY[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
-static const unsigned char DEFAULT_SYSTEM_TITLE[] = { 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48 };
-static const unsigned char DEFAULT_AUTHENTICATION_KEY[] = { 0xD0, 0xD1, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0xD7,
-                                                            0xD8, 0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE, 0xDF
-};
-#define GET_TAG(s)(s->broadcast ? 0x40 : 0) | s->security | s->suite
+static const unsigned char DEFAULT_BROADCAST_BLOCK_CIPHER_KEY[] = {0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA};
+static const unsigned char DEFAULT_BLOCK_CIPHER_KEY[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+static const unsigned char DEFAULT_SYSTEM_TITLE[] = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
+static const unsigned char DEFAULT_AUTHENTICATION_KEY[] = {0xD0, 0xD1, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0xD7,
+                                                           0xD8, 0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE, 0xDF};
+#define GET_TAG(s) (s->broadcast ? 0x40 : 0) | s->security | s->suite
 
 static unsigned char AUTHENTICATION_KEY_SIZE(DLMS_AES aes)
 {
@@ -19,36 +18,29 @@ static unsigned char AUTHENTICATION_KEY_SIZE(DLMS_AES aes)
 
 static int gxgcm_init(
     const DLMS_AES aes,
-    unsigned char* cipherKey,
-    unsigned char* roundKeys)
+    unsigned char *cipherKey,
+    unsigned char *roundKeys)
 {
     gxaes_keyExpansion(aes, cipherKey, roundKeys);
     return 0;
 }
 
 // Increase the block counter.
-static void gxgcm_increaseBlockCounter(gxByteBuffer* nonceAndCounter,
-    uint32_t counter)
+static void gxgcm_increaseBlockCounter(gxByteBuffer *nonceAndCounter,
+                                       uint32_t counter)
 {
     nonceAndCounter->size = 12;
     bb_setUInt32(nonceAndCounter, counter);
 }
 
-
-
-
-
-
-
-
 static int gxgcm_transformBlock(
     const DLMS_AES aes,
-    const unsigned char* systemTitle,
+    const unsigned char *systemTitle,
     const uint32_t counter,
-    unsigned char* data,
+    unsigned char *data,
     const uint32_t length,
     uint32_t algorithmInitialblockCounter,
-    unsigned char* roundKeys)
+    unsigned char *roundKeys)
 {
     gxByteBuffer nonceAndCounter;
     unsigned char NONSE[16];
@@ -59,7 +51,7 @@ static int gxgcm_transformBlock(
 
     uint16_t inputOffset = 0;
     uint32_t pos, pos2, count;
-    unsigned char counterModeBlock[16] = { 0 };
+    unsigned char counterModeBlock[16] = {0};
     for (pos = 0; pos < length; pos += 16)
     {
 #ifndef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
@@ -67,10 +59,10 @@ static int gxgcm_transformBlock(
 #else
         gxByteBuffer cbm, secret;
         BB_ATTACH(cbm, counterModeBlock, 0);
-        bb_attach(&secret, roundKeys, aes == DLMS_AES_128 ? 16 : 32, 
-            aes == DLMS_AES_128 ? 16 : 32);
+        bb_attach(&secret, roundKeys, aes == DLMS_AES_128 ? 16 : 32,
+                  aes == DLMS_AES_128 ? 16 : 32);
         gx_hsmAesEncrypt(aes, &nonceAndCounter, &secret, &cbm);
-#endif //DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+#endif // DLMS_USE_AES_HARDWARE_SECURITY_MODULE
         gxgcm_increaseBlockCounter(&nonceAndCounter, ++algorithmInitialblockCounter);
         count = length - pos < 16 ? length - pos : 16;
         for (pos2 = 0; pos2 != count; ++pos2)
@@ -83,7 +75,7 @@ static int gxgcm_transformBlock(
 }
 
 // Make Xor for 128 bits.
-static void gxgcm_xor(unsigned char* block, unsigned char* value)
+static void gxgcm_xor(unsigned char *block, unsigned char *value)
 {
     unsigned char pos;
     for (pos = 0; pos != 16; ++pos)
@@ -93,7 +85,7 @@ static void gxgcm_xor(unsigned char* block, unsigned char* value)
 }
 
 // Shift block to right.
-static void gxgcm_shiftRight(unsigned char* block)
+static void gxgcm_shiftRight(unsigned char *block)
 {
     uint32_t val = GETU32(block + 12);
     val >>= 1;
@@ -120,23 +112,23 @@ static void gxgcm_shiftRight(unsigned char* block)
     PUT32(block, val);
 }
 
-static void gxgcm_multiplyH(unsigned char* y, unsigned char* h)
+static void gxgcm_multiplyH(unsigned char *y, unsigned char *h)
 {
     unsigned char i, j;
     unsigned char tmp[16];
-    unsigned char z[16] = { 0 };
+    unsigned char z[16] = {0};
     memcpy(tmp, h, 16);
-    //Loop every byte.
+    // Loop every byte.
     for (i = 0; i != 16; ++i)
     {
-        //Loop every bit.
+        // Loop every bit.
         for (j = 0; j != 8; j++)
         {
             if ((y[i] & (1 << (7 - j))) != 0)
             {
                 gxgcm_xor(z, &tmp[0]);
             }
-            //If last bit.
+            // If last bit.
             if ((tmp[15] & 0x01) != 0)
             {
                 gxgcm_shiftRight(&tmp[0]);
@@ -156,15 +148,15 @@ static void gxgcm_getGHash(
     const DLMS_SECURITY security,
     const DLMS_AES aes,
     unsigned char tag,
-    unsigned char* authenticationKey,
-    gxByteBuffer* value,
+    unsigned char *authenticationKey,
+    gxByteBuffer *value,
     uint32_t lenA,
     uint32_t lenC,
-    unsigned char* Y, 
-    unsigned char* key)
+    unsigned char *Y,
+    unsigned char *key)
 {
-    unsigned char EMPTY[16] = { 0 };
-    unsigned char H[32] = { 0 };
+    unsigned char EMPTY[16] = {0};
+    unsigned char H[32] = {0};
 #ifndef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
     gxaes_cipher(aes, 1, EMPTY, key, H);
 #else
@@ -173,10 +165,10 @@ static void gxgcm_getGHash(
     BB_ATTACH(h, H, 0);
     bb_attach(&secret, key, (aes == DLMS_AES_128) ? 16 : 32, (aes == DLMS_AES_128) ? 16 : 32);
     gx_hsmAesEncrypt(aes, &e, &secret, &h);
-#endif //DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+#endif // DLMS_USE_AES_HARDWARE_SECURITY_MODULE
     uint32_t cnt, pos;
     unsigned char X[16];
-    //Handle tag and authentication key.
+    // Handle tag and authentication key.
     memset(X, 0, 16);
     memset(Y, 0, 16);
     X[0] = tag;
@@ -189,35 +181,35 @@ static void gxgcm_getGHash(
         available -= 15;
         if (available > 16)
         {
-            //If key size is 32 bytes.
+            // If key size is 32 bytes.
             available = 16;
             memcpy(&X[0], authenticationKey + 15, available);
             gxgcm_xor(Y, X);
             gxgcm_multiplyH(Y, H);
             available = AUTHENTICATION_KEY_SIZE(aes) - 31;
-            //Add the authentication key remaining.
+            // Add the authentication key remaining.
             memcpy(&X[0], authenticationKey + 31, available);
         }
         else
         {
-            //Add the authentication key remaining.
+            // Add the authentication key remaining.
             memcpy(&X[0], authenticationKey + 15, available);
         }
     }
 
     if (security == DLMS_SECURITY_AUTHENTICATION)
     {
-        //Plain text.
+        // Plain text.
     }
     else
     {
-        //Plain text.
+        // Plain text.
         memset(X + available, 0, 16 - available);
         available = 0;
         gxgcm_xor(Y, X);
         gxgcm_multiplyH(Y, H);
     }
- 
+
     for (pos = 0; pos < bb_available(value); pos += 16)
     {
         memset(X + available, 0, 16 - available);
@@ -246,27 +238,26 @@ static void gxgcm_getGHash(
     gxgcm_multiplyH(Y, H);
 }
 
-
 static int gxgcm_getTag(
     const DLMS_SECURITY security,
     const DLMS_AES aes,
     DLMS_COUNT_TYPE type,
-    const unsigned char* systemTitle,
+    const unsigned char *systemTitle,
     const uint32_t frameCounter,
-    unsigned char* authenticationKey,
+    unsigned char *authenticationKey,
     const unsigned char tag,
-    gxByteBuffer* value,
-    gxByteBuffer* aTag,
-    unsigned char* key)
+    gxByteBuffer *value,
+    gxByteBuffer *aTag,
+    unsigned char *key)
 {
     int ret;
-    //Length of the crypted data.
+    // Length of the crypted data.
     uint32_t lenC = 0;
-    //Length of the authenticated data.
+    // Length of the authenticated data.
     uint32_t lenA = (1 + AUTHENTICATION_KEY_SIZE(aes)) * 8;
     if (security == DLMS_SECURITY_AUTHENTICATION)
     {
-        //If data is not ciphered.
+        // If data is not ciphered.
         lenA += 8 * bb_available(value);
     }
     else
@@ -275,10 +266,10 @@ static int gxgcm_getTag(
     }
     unsigned char hash[16];
     gxgcm_getGHash(security, aes, tag, authenticationKey,
-        value, lenA, lenC, &hash[0], key);
+                   value, lenA, lenC, &hash[0], key);
     ret = gxgcm_transformBlock(aes, systemTitle, frameCounter,
-        hash, sizeof(hash), 1,
-        key);
+                               hash, sizeof(hash), 1,
+                               key);
     if (ret == 0)
     {
         if (type == DLMS_COUNT_TYPE_TAG)
@@ -291,13 +282,13 @@ static int gxgcm_getTag(
 }
 
 static int cip_validateTag(
-    ciphering* settings,
+    ciphering *settings,
     const DLMS_AES aes,
     unsigned char tag,
-    const unsigned char* systemTitle,
+    const unsigned char *systemTitle,
     uint32_t frameCounter,
-    gxByteBuffer* input,
-    unsigned char* key)
+    gxByteBuffer *input,
+    unsigned char *key)
 {
     int ret;
     unsigned char TAG[12];
@@ -310,21 +301,21 @@ static int cip_validateTag(
     else
     {
         input->size -= 12;
-        //Tag is converted to security.
+        // Tag is converted to security.
         if ((ret = gxgcm_getTag(tag & 0x30, aes, DLMS_COUNT_TYPE_TAG,
-            systemTitle, frameCounter,
+                                systemTitle, frameCounter,
 #ifdef DLMS_IGNORE_MALLOC
-            settings->authenticationKey,
+                                settings->authenticationKey,
 #else
-            settings->authenticationKey.data,
-#endif //DLMS_IGNORE_MALLOC
-            tag, input, &ATag, key)) == 0)
+                                settings->authenticationKey.data,
+#endif // DLMS_IGNORE_MALLOC
+                                tag, input, &ATag, key)) == 0)
         {
             if (memcmp(input->data + input->size, ATag.data, 12) != 0)
             {
 #ifdef DLMS_NOTIFY_AUTHENTICATION_ERROR
                 svr_authenticationError();
-#endif //DLMS_NOTIFY_AUTHENTICATION_ERROR
+#endif // DLMS_NOTIFY_AUTHENTICATION_ERROR
                 ret = DLMS_ERROR_CODE_INVALID_TAG;
             }
         }
@@ -334,148 +325,148 @@ static int cip_validateTag(
 
 #ifndef DLMS_IGNORE_MALLOC
 int cip_crypt(
-    ciphering* settings,
+    ciphering *settings,
     const DLMS_SECURITY security,
     DLMS_COUNT_TYPE type,
     uint32_t frameCounter,
     unsigned char tag,
-    const unsigned char* systemTitle,
-    gxByteBuffer* key,
-    gxByteBuffer* input,
+    const unsigned char *systemTitle,
+    gxByteBuffer *key,
+    gxByteBuffer *input,
     unsigned char encrypt)
 #else
 int cip_crypt(
-    ciphering* settings,
+    ciphering *settings,
     const DLMS_SECURITY security,
     DLMS_COUNT_TYPE type,
     uint32_t frameCounter,
     unsigned char tag,
-    const unsigned char* systemTitle,
-    unsigned char* key,
-    gxByteBuffer* input,
+    const unsigned char *systemTitle,
+    unsigned char *key,
+    gxByteBuffer *input,
     unsigned char encrypt)
-#endif //DLMS_IGNORE_MALLOC
+#endif // DLMS_IGNORE_MALLOC
 {
 #ifndef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
-    //AES 128 uses 176 round key(11 * 16) and 256 uses 240 (15 * 16).
+    // AES 128 uses 176 round key(11 * 16) and 256 uses 240 (15 * 16).
 #ifndef GX_DLMS_MICROCONTROLLER
     unsigned char gx_roundKeys[240];
 #else
     static unsigned char gx_roundKeys[240];
-#endif //DLMS_USE_AES_HARDWARE_SECURITY_MODULE
-#endif //GX_DLMS_MICROCONTROLLER
+#endif // DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+#endif // GX_DLMS_MICROCONTROLLER
     int ret = 0;
     DLMS_AES aes = settings->suite == DLMS_SECURITY_SUITE_V2 ? DLMS_AES_256 : DLMS_AES_128;
     if (ret == 0)
     {
         switch (security)
         {
-             case DLMS_SECURITY_AUTHENTICATION:
-                #ifndef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
-                    gxgcm_init(aes, key->data, gx_roundKeys);
-                #endif //DLMS_USE_AES_HARDWARE_SECURITY_MODULE
-                            if (encrypt)
-                            {
-                                //The authentication tag is validated in a prior step.
-                                ret = gxgcm_getTag(security, aes, type, systemTitle,
-                                    frameCounter,
-                                    settings->authenticationKey.data,
-                                    tag, input, input,
-                #ifndef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
-                                    gx_roundKeys
-                #else
-                #ifndef DLMS_IGNORE_MALLOC
-                                    key->data
-                #else
-                                    key
-                #endif //DLMS_IGNORE_MALLOC
-                #endif //DLMS_USE_AES_HARDWARE_SECURITY_MODULE
-                                );
-                            }
-                            else
-                            {
-                                //Validate authentication tag.
-                                ret = cip_validateTag(
-                                    settings,
-                                    aes,
-                                    tag,
-                                    systemTitle,
-                                    frameCounter,
-                                    input,
-                #ifndef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
-                                    gx_roundKeys
-                #else
-                #ifndef DLMS_IGNORE_MALLOC
-                                    key->data
-                #else
-                                    key
-                #endif //DLMS_IGNORE_MALLOC
-                #endif //DLMS_USE_AES_HARDWARE_SECURITY_MODULE
-                                );
-                            }
+        case DLMS_SECURITY_AUTHENTICATION:
+#ifndef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+            gxgcm_init(aes, key->data, gx_roundKeys);
+#endif // DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+            if (encrypt)
+            {
+                // The authentication tag is validated in a prior step.
+                ret = gxgcm_getTag(security, aes, type, systemTitle,
+                                   frameCounter,
+                                   settings->authenticationKey.data,
+                                   tag, input, input,
+#ifndef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+                                   gx_roundKeys
+#else
+#ifndef DLMS_IGNORE_MALLOC
+                                   key->data
+#else
+                                   key
+#endif // DLMS_IGNORE_MALLOC
+#endif // DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+                );
+            }
+            else
+            {
+                // Validate authentication tag.
+                ret = cip_validateTag(
+                    settings,
+                    aes,
+                    tag,
+                    systemTitle,
+                    frameCounter,
+                    input,
+#ifndef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+                    gx_roundKeys
+#else
+#ifndef DLMS_IGNORE_MALLOC
+                    key->data
+#else
+                    key
+#endif // DLMS_IGNORE_MALLOC
+#endif // DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+                );
+            }
             break;
         case DLMS_SECURITY_AUTHENTICATION_ENCRYPTION:
-        #ifndef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
-        #ifndef DLMS_IGNORE_MALLOC
+#ifndef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+#ifndef DLMS_IGNORE_MALLOC
             gxgcm_init(aes, key->data, gx_roundKeys);
-        #else
+#else
             gxgcm_init(aes, key, gx_roundKeys);
-            #endif //DLMS_IGNORE_MALLOC  
-            #endif //DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+#endif // DLMS_IGNORE_MALLOC
+#endif // DLMS_USE_AES_HARDWARE_SECURITY_MODULE
             if (encrypt == 0)
-                        {
-                            ret = cip_validateTag(
-                                settings,
-                                aes,
-                                tag,
-                                systemTitle,
-                                frameCounter,
-                                input,
-            #ifndef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
-                                gx_roundKeys
-            #else
-            #ifndef DLMS_IGNORE_MALLOC
-                                key->data
-            #else
-                                key
-            #endif //DLMS_IGNORE_MALLOC
-            #endif //DLMS_USE_AES_HARDWARE_SECURITY_MODULE
-                            );
-                        }
+            {
+                ret = cip_validateTag(
+                    settings,
+                    aes,
+                    tag,
+                    systemTitle,
+                    frameCounter,
+                    input,
+#ifndef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+                    gx_roundKeys
+#else
+#ifndef DLMS_IGNORE_MALLOC
+                    key->data
+#else
+                    key
+#endif // DLMS_IGNORE_MALLOC
+#endif // DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+                );
+            }
             if (ret == 0 &&
                 (ret = gxgcm_transformBlock(aes, systemTitle, frameCounter,
-                    input->data + input->position, bb_available(input), 2,
-            #ifndef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
-                                gx_roundKeys
-            #else
-            #ifndef DLMS_IGNORE_MALLOC
-                                key->data
-            #else
-                                key
-            #endif //DLMS_IGNORE_MALLOC  
-            #endif //DLMS_USE_AES_HARDWARE_SECURITY_MODULE
-                )) == 0)
+                                            input->data + input->position, bb_available(input), 2,
+#ifndef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+                                            gx_roundKeys
+#else
+#ifndef DLMS_IGNORE_MALLOC
+                                            key->data
+#else
+                                            key
+#endif // DLMS_IGNORE_MALLOC
+#endif // DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+                                            )) == 0)
             {
                 if (encrypt)
                 {
-                    //The authentication tag is validated in a prior step.
+                    // The authentication tag is validated in a prior step.
                     ret = gxgcm_getTag(
                         security, aes, type, systemTitle, frameCounter,
-                #ifdef DLMS_IGNORE_MALLOC
-                            settings->authenticationKey,
-                #else
-                            settings->authenticationKey.data,
-                #endif //DLMS_IGNORE_MALLOC
-                            GET_TAG(settings), input, input,
-                #ifndef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
-                            gx_roundKeys
-                #else
-                #ifndef DLMS_IGNORE_MALLOC
-                            key->data
-                #else
-                            key
-                #endif //DLMS_IGNORE_MALLOC
-                #endif //DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+#ifdef DLMS_IGNORE_MALLOC
+                        settings->authenticationKey,
+#else
+                        settings->authenticationKey.data,
+#endif // DLMS_IGNORE_MALLOC
+                        GET_TAG(settings), input, input,
+#ifndef DLMS_USE_AES_HARDWARE_SECURITY_MODULE
+                        gx_roundKeys
+#else
+#ifndef DLMS_IGNORE_MALLOC
+                        key->data
+#else
+                        key
+#endif // DLMS_IGNORE_MALLOC
+#endif // DLMS_USE_AES_HARDWARE_SECURITY_MODULE
                     );
                 }
             }
@@ -489,17 +480,17 @@ int cip_crypt(
         }
         if (ret == 0 && encrypt && type == DLMS_COUNT_TYPE_PACKET)
         {
-            //Nonse must be 20 bytes because it's used later.
+            // Nonse must be 20 bytes because it's used later.
 #ifdef GX_DLMS_MICROCONTROLLER
-            static unsigned char NONSE[20] = { 0 };
+            static unsigned char NONSE[20] = {0};
 #else
-            unsigned char NONSE[20] = { 0 };
-#endif //GX_DLMS_MICROCONTROLLER
+            unsigned char NONSE[20] = {0};
+#endif // GX_DLMS_MICROCONTROLLER
             gxByteBuffer nonse;
             bb_attach(&nonse, NONSE, 0, sizeof(NONSE));
             if ((ret = bb_setUInt8(&nonse, tag)) == 0)
             {
-                
+
                 tag = (settings->broadcast ? 0x40 : 0) | settings->security | settings->suite;
                 if ((ret = hlp_setObjectCount(5 + input->size, &nonse)) == 0 &&
                     (ret = bb_setUInt8(&nonse, tag)) == 0 &&
@@ -513,17 +504,14 @@ int cip_crypt(
     return ret;
 }
 
-
-
-
 int cip_decrypt(
-    ciphering* settings,
-    unsigned char* title,
-    gxByteBuffer* key,
-    gxByteBuffer* data,
-    DLMS_SECURITY* security,
-    DLMS_SECURITY_SUITE* suite,
-    uint64_t* invocationCounter)
+    ciphering *settings,
+    unsigned char *title,
+    gxByteBuffer *key,
+    gxByteBuffer *data,
+    DLMS_SECURITY *security,
+    DLMS_SECURITY_SUITE *suite,
+    uint64_t *invocationCounter)
 {
     unsigned char systemTitle[8];
     uint16_t length;
@@ -538,6 +526,35 @@ int cip_decrypt(
     if ((ret = bb_getUInt8(data, &ch)) != 0)
     {
         return ret;
+    }
+    cmd = (DLMS_COMMAND)ch;
+    switch (cmd)
+    {
+    case DLMS_COMMAND_GENERAL_GLO_CIPHERING:
+    case DLMS_COMMAND_GENERAL_DED_CIPHERING:
+        if ((ret = hlp_getObjectCount2(data, &length)) != 0)
+        {
+            return ret;
+        }
+        if (length != 0)
+        {
+            if (length != 8)
+            {
+                return DLMS_ERROR_CODE_INVALID_PARAMETER;
+            }
+            bb_get(data, systemTitle, length);
+            title = systemTitle;
+        }
+        break;
+    case DLMS_COMMAND_GLO_INITIATE_REQUEST:
+    case DLMS_COMMAND_GLO_INITIATE_RESPONSE:
+    case DLMS_COMMAND_GLO_GET_REQUEST:
+    case DLMS_COMMAND_GLO_SET_REQUEST:
+    case DLMS_COMMAND_GLO_METHOD_REQUEST:
+    case DLMS_COMMAND_GLO_METHOD_RESPONSE:
+        break;
+    default:
+        return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
     }
 
     if ((ret = hlp_getObjectCount2(data, &length)) != 0)
@@ -558,13 +575,13 @@ int cip_decrypt(
             return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
         }
     }
-    //If Key_Set or authentication or encryption is not used.
+    // If Key_Set or authentication or encryption is not used.
     if ((settings->broadcast && (ch & 0x40) == 0) ||
         (!settings->broadcast && (ch & 0x40) != 0) ||
         *security == DLMS_SECURITY_NONE ||
-        //If security level is set.
+        // If security level is set.
         (settings->security != DLMS_SECURITY_NONE &&
-            *security != settings->security))
+         *security != settings->security))
     {
         return DLMS_ERROR_CODE_INVALID_DECIPHERING_ERROR;
     }
@@ -588,38 +605,34 @@ int cip_decrypt(
         0);
     if (ret == 0)
     {
-        //Remove ciphering part from the data.
+        // Remove ciphering part from the data.
         ret = bb_move(data, data->position, index, bb_available(data));
         data->position = index;
     }
     return ret;
 }
 
-
-
-
-
 #ifndef DLMS_IGNORE_MALLOC
 int cip_encrypt(
-    ciphering* settings,
+    ciphering *settings,
     DLMS_SECURITY security,
     DLMS_COUNT_TYPE type,
     uint32_t frameCounter,
     unsigned char tag,
-    const unsigned char* systemTitle,
-    gxByteBuffer* key,
-    gxByteBuffer* input)
+    const unsigned char *systemTitle,
+    gxByteBuffer *key,
+    gxByteBuffer *input)
 #else
 int cip_encrypt(
-    ciphering* settings,
+    ciphering *settings,
     DLMS_SECURITY security,
     DLMS_COUNT_TYPE type,
     uint32_t frameCounter,
     unsigned char tag,
-    const unsigned char* systemTitle,
-    unsigned char* key,
-    gxByteBuffer* input)
-#endif //DLMS_IGNORE_MALLOC
+    const unsigned char *systemTitle,
+    unsigned char *key,
+    gxByteBuffer *input)
+#endif // DLMS_IGNORE_MALLOC
 {
 #ifdef DLMS_DEBUG
     svr_notifyTrace5(GET_STR_FROM_EEPROM("System title: "), systemTitle, 8);
@@ -629,18 +642,18 @@ int cip_encrypt(
 #else
     svr_notifyTrace5(GET_STR_FROM_EEPROM("Block cipher key: "), key, 16);
     svr_notifyTrace5(GET_STR_FROM_EEPROM("Authentication key: "), settings->authenticationKey, 16);
-#endif //DLMS_IGNORE_MALLOC
+#endif // DLMS_IGNORE_MALLOC
 
-#endif //DLMS_DEBUG
+#endif // DLMS_DEBUG
 #ifndef DLMS_IGNORE_MALLOC
     unsigned char keySize = settings->suite == DLMS_SECURITY_SUITE_V2 ? 32 : 16;
     if (settings->security == DLMS_SECURITY_NONE ||
         bb_available(&settings->authenticationKey) != keySize)
     {
-        //Invalid system title.
+        // Invalid system title.
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
-#endif //DLMS_IGNORE_MALLOC
+#endif // DLMS_IGNORE_MALLOC
     return cip_crypt(
         settings,
         security,
@@ -653,8 +666,7 @@ int cip_encrypt(
         1);
 }
 
-
-void cip_init(ciphering* target)
+void cip_init(ciphering *target)
 {
     target->invocationCounter = 0;
     target->suite = DLMS_SECURITY_SUITE_V0;
@@ -677,6 +689,6 @@ void cip_init(ciphering* target)
     memcpy(target->systemTitle, DEFAULT_SYSTEM_TITLE, sizeof(DEFAULT_SYSTEM_TITLE));
     memcpy(target->authenticationKey, DEFAULT_AUTHENTICATION_KEY, sizeof(DEFAULT_AUTHENTICATION_KEY));
     memset(target->dedicatedKey, 0, 16);
-#endif //DLMS_IGNORE_MALLOC
+#endif // DLMS_IGNORE_MALLOC
     target->broadcast = 0;
 }
