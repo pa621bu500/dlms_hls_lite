@@ -519,15 +519,15 @@ int cl_parseApplicationAssociationResponse(
             }
             bb_clear(&challenge);
         }
-        // if ((ret = dlms_secure(
-        //     settings,
-        //     ic,
-        //     &settings->ctoSChallenge,
-        //     secret,
-        //     &challenge)) != 0)
-        // {
-        //     return ret;
-        // }
+        if ((ret = dlms_secure(
+            settings,
+            ic,
+            &settings->ctoSChallenge,
+            secret,
+            &challenge)) != 0)
+        {
+            return ret;
+        }
         equals = bb_compare(
             &challenge,
             value.data,

@@ -255,6 +255,11 @@ unsigned char dlms_getGloMessage(dlmsSettings *settings, DLMS_COMMAND command, D
             case DLMS_COMMAND_METHOD_REQUEST:
                 cmd = DLMS_COMMAND_GLO_METHOD_REQUEST;
                 break;
+            case DLMS_COMMAND_GET_REQUEST:
+                cmd = DLMS_COMMAND_GLO_GET_REQUEST;
+                break;
+            default:
+                cmd = DLMS_COMMAND_NONE;
         }
     }
     return cmd;
