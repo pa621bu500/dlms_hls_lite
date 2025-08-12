@@ -19,8 +19,7 @@ int BYTE_BUFFER_INIT(
     return 0;
 }
 
-
-int getUInt32(gxByteBuffer* buff, gxDataInfo* info, dlmsVARIANT* value)
+int getUInt32(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT *value)
 {
     int ret;
     // If there is not enough data available.
@@ -97,10 +96,10 @@ int bb_clear(
     return 0;
 }
 
-char* bb_toHexString(
-    gxByteBuffer* arr)
+char *bb_toHexString(
+    gxByteBuffer *arr)
 {
-    char* buff = hlp_bytesToHex(arr->data, arr->size);
+    char *buff = hlp_bytesToHex(arr->data, arr->size);
     return buff;
 }
 
@@ -202,16 +201,16 @@ int bb_setUInt8(
 }
 
 int bb_setInt8(
-    gxByteBuffer* arr,
+    gxByteBuffer *arr,
     char item)
 {
     return bb_setUInt8(arr, (unsigned char)item);
 }
 
-char* bb_toString(
-    gxByteBuffer* arr)
+char *bb_toString(
+    gxByteBuffer *arr)
 {
-    char* buff = (char*)gxmalloc(arr->size + 1);
+    char *buff = (char *)gxmalloc(arr->size + 1);
     if (buff != NULL)
     {
         memcpy(buff, arr->data, arr->size);
@@ -220,10 +219,9 @@ char* bb_toString(
     return buff;
 }
 
-
 int bb_get(
-    gxByteBuffer* bb,
-    unsigned char* value,
+    gxByteBuffer *bb,
+    unsigned char *value,
     uint32_t count)
 {
     if (bb == NULL || value == NULL || bb->size - bb->position < count)
@@ -234,7 +232,6 @@ int bb_get(
     bb->position += count;
     return 0;
 }
-
 
 uint32_t bb_size(gxByteBuffer *arr)
 {
@@ -321,13 +318,12 @@ int bb_setUInt16(
     return ret;
 }
 
-
 int bb_addDoubleAsString(
-    gxByteBuffer* bb,
+    gxByteBuffer *bb,
     double value)
 {
     char buff[20];
-    //Show as integer value if there is no fractal part.
+    // Show as integer value if there is no fractal part.
     if (value - (int32_t)value == 0)
     {
         return bb_addIntAsString(bb, (int)value);
@@ -340,22 +336,21 @@ int bb_addDoubleAsString(
         sprintf(buff, "%lf", value);
 #endif
         return bb_addString(bb, buff);
-}
+    }
 }
 
-int bb_addIntAsString(gxByteBuffer* bb, int value)
+int bb_addIntAsString(gxByteBuffer *bb, int value)
 {
     return bb_addIntAsString2(bb, value, 0);
 }
 
-int bb_addIntAsString2(gxByteBuffer* bb, int value, unsigned char digits)
+int bb_addIntAsString2(gxByteBuffer *bb, int value, unsigned char digits)
 {
     int ret;
     char str[20];
     hlp_intToString(str, 20, value, 1, digits);
     if ((ret = bb_addString(bb, str)) != 0)
     {
-
     }
     return ret;
 }
@@ -384,15 +379,15 @@ int bb_addString(
 
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 int bb_setUInt32ByIndex(
-    gxByteBuffer* arr,
+    gxByteBuffer *arr,
     uint32_t index,
     uint32_t item)
 #else
 int bb_setUInt32ByIndex(
-    gxByteBuffer* arr,
+    gxByteBuffer *arr,
     uint16_t index,
     uint32_t item)
-#endif //defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
+#endif // defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 {
     int ret = bb_allocate(arr, index, 4);
     if (ret == 0)
@@ -402,9 +397,8 @@ int bb_setUInt32ByIndex(
     return ret;
 }
 
-
 int bb_setUInt32(
-    gxByteBuffer* arr,
+    gxByteBuffer *arr,
     uint32_t item)
 {
     int ret = bb_setUInt32ByIndex(arr, arr->size, item);
@@ -414,8 +408,6 @@ int bb_setUInt32(
     }
     return ret;
 }
-
-
 
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
 int bb_capacity(

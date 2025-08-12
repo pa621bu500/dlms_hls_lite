@@ -8,12 +8,10 @@
 #include "enums.h"
 
 int obj_toString(
-gxObject* object,
-char** buff);
+    gxObject *object,
+    char **buff);
 
-    const char* obj_getUnitAsString(
-        unsigned char unit);
-
-
+const char *obj_getUnitAsString(
+    unsigned char unit);
 
 #endif

@@ -3,26 +3,26 @@
 #include "../include/helpers.h"
 #include <assert.h>
 
-//Initialize variant.
-int var_init(dlmsVARIANT* data)
+// Initialize variant.
+int var_init(dlmsVARIANT *data)
 {
     data->vt = DLMS_DATA_TYPE_NONE;
     data->byteArr = NULL;
     return DLMS_ERROR_CODE_OK;
 }
 
-static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
+static int convert(dlmsVARIANT *item, DLMS_DATA_TYPE type)
 {
     int ret, fromSize, toSize;
     uint16_t pos;
     char buff[250];
     dlmsVARIANT tmp, tmp3;
-    dlmsVARIANT* it;
+    dlmsVARIANT *it;
     if (item->vt == type)
     {
         return DLMS_ERROR_CODE_OK;
     }
-     var_init(&tmp);
+    var_init(&tmp);
     var_init(&tmp3);
     ret = var_copy(&tmp, item);
     if (ret != DLMS_ERROR_CODE_OK)
@@ -32,29 +32,29 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
     var_clear(item);
     if (type == DLMS_DATA_TYPE_STRING)
     {
-          item->strVal = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
+        item->strVal = (gxByteBuffer *)gxmalloc(sizeof(gxByteBuffer));
         BYTE_BUFFER_INIT(item->strVal);
         switch (tmp.vt)
         {
-            case DLMS_DATA_TYPE_OCTET_STRING:
+        case DLMS_DATA_TYPE_OCTET_STRING:
+        {
+#ifndef DLMS_IGNORE_STRING_CONVERTER
+            if (tmp.byteArr != NULL)
             {
-                #ifndef DLMS_IGNORE_STRING_CONVERTER
-                    if (tmp.byteArr != NULL)
-                    {
-                        char* str = bb_toHexString(tmp.byteArr);
-                        bb_addString(item->strVal, str);
-                        gxfree(str);
-                    }
-                    item->vt = type;
-                    var_clear(&tmp);
-                    return DLMS_ERROR_CODE_OK;
-                #else
-                    return DLMS_ERROR_CODE_INVALID_PARAMETER;
-                #endif //DLMS_IGNORE_STRING_CONVERTER
+                char *str = bb_toHexString(tmp.byteArr);
+                bb_addString(item->strVal, str);
+                gxfree(str);
             }
-            case DLMS_DATA_TYPE_UINT32:
-            case DLMS_DATA_TYPE_DELTA_UINT32:
-            {
+            item->vt = type;
+            var_clear(&tmp);
+            return DLMS_ERROR_CODE_OK;
+#else
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+#endif // DLMS_IGNORE_STRING_CONVERTER
+        }
+        case DLMS_DATA_TYPE_UINT32:
+        case DLMS_DATA_TYPE_DELTA_UINT32:
+        {
             hlp_uint64ToString(buff, 250, tmp.ulVal, 0);
             if ((ret = bb_addString(item->strVal, buff)) == 0)
             {
@@ -63,17 +63,17 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
             var_clear(&tmp);
             return ret;
         }
-            default:
-                return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
+        default:
+            return DLMS_ERROR_CODE_NOT_IMPLEMENTED;
         }
     }
     fromSize = var_getSize(tmp.vt);
     toSize = var_getSize(item->vt);
-    //If we try to change bigger valut to smaller check that value is not too big.
-    //Example Int16 to Int8.
+    // If we try to change bigger valut to smaller check that value is not too big.
+    // Example Int16 to Int8.
     if (fromSize > toSize)
     {
-        unsigned char* pValue = &tmp.bVal;
+        unsigned char *pValue = &tmp.bVal;
         for (pos = (unsigned char)toSize; pos != (unsigned char)fromSize; ++pos)
         {
             if (pValue[pos] != 0)
@@ -96,7 +96,7 @@ static int convert(dlmsVARIANT* item, DLMS_DATA_TYPE type)
     return DLMS_ERROR_CODE_OK;
 }
 
-int var_changeType(dlmsVARIANT* value, DLMS_DATA_TYPE newType)
+int var_changeType(dlmsVARIANT *value, DLMS_DATA_TYPE newType)
 {
     if (newType == value->vt)
     {
@@ -106,11 +106,11 @@ int var_changeType(dlmsVARIANT* value, DLMS_DATA_TYPE newType)
     {
         return var_clear(value);
     }
-     if (value->vt == DLMS_DATA_TYPE_ARRAY && newType == DLMS_DATA_TYPE_OCTET_STRING)
+    if (value->vt == DLMS_DATA_TYPE_ARRAY && newType == DLMS_DATA_TYPE_OCTET_STRING)
     {
         return DLMS_ERROR_CODE_OK;
     }
-     if (value->vt == DLMS_DATA_TYPE_STRING)
+    if (value->vt == DLMS_DATA_TYPE_STRING)
     {
         return convert(value, newType);
     }
@@ -125,53 +125,46 @@ int var_changeType(dlmsVARIANT* value, DLMS_DATA_TYPE newType)
     case DLMS_DATA_TYPE_DELTA_UINT32:
         return convert(value, newType);
     default:
-            //Handled later.
-            break;
-    
+        // Handled later.
+        break;
     }
     switch (value->vt)
     {
-        case DLMS_DATA_TYPE_OCTET_STRING:
-            switch (newType)
-            {
-            default:
-                return DLMS_ERROR_CODE_INVALID_PARAMETER;
-            }
-        
-
+    case DLMS_DATA_TYPE_OCTET_STRING:
+        switch (newType)
+        {
+        default:
+            return DLMS_ERROR_CODE_INVALID_PARAMETER;
+        }
     }
     return DLMS_ERROR_CODE_OK;
 }
 
-int va_getByIndex(variantArray* arr, int index, dlmsVARIANT_PTR* item)
+int va_getByIndex(variantArray *arr, int index, dlmsVARIANT_PTR *item)
 {
     if (index >= arr->size)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
     }
 
-    #ifdef DLMS_IGNORE_MALLOC
-        dlmsVARIANT_PTR p = (dlmsVARIANT_PTR)arr->data;
-        *item = &p[index];
-        return DLMS_ERROR_CODE_OK;
-    #else
-        dlmsVARIANT** p = (dlmsVARIANT**)arr->data;
-        *item = p[index];
-        return DLMS_ERROR_CODE_OK;
-    #endif //DLMS_IGNORE_MALLOC
+#ifdef DLMS_IGNORE_MALLOC
+    dlmsVARIANT_PTR p = (dlmsVARIANT_PTR)arr->data;
+    *item = &p[index];
+    return DLMS_ERROR_CODE_OK;
+#else
+    dlmsVARIANT **p = (dlmsVARIANT **)arr->data;
+    *item = p[index];
+    return DLMS_ERROR_CODE_OK;
+#endif // DLMS_IGNORE_MALLOC
 }
 
-
-
-
-
-int var_toString(dlmsVARIANT* item, gxByteBuffer* value)
+int var_toString(dlmsVARIANT *item, gxByteBuffer *value)
 {
     int ret = DLMS_ERROR_CODE_OK;
     uint16_t pos;
     if (item->vt == DLMS_DATA_TYPE_ARRAY || item->vt == DLMS_DATA_TYPE_STRUCTURE)
     {
-        dlmsVARIANT* it;
+        dlmsVARIANT *it;
         bb_setInt8(value, item->vt == DLMS_DATA_TYPE_ARRAY ? '{' : '[');
         for (pos = 0; pos != item->Arr->size; ++pos)
         {
@@ -207,20 +200,20 @@ int var_toString(dlmsVARIANT* item, gxByteBuffer* value)
 }
 
 /**
-* Convert octetstring to DLMS bytes.
-*
-* buff
-*            Byte buffer where data is write.
-* value
-*            Added value.
-*/
-int var_setOctetString(gxByteBuffer* buff, dlmsVARIANT* value)
+ * Convert octetstring to DLMS bytes.
+ *
+ * buff
+ *            Byte buffer where data is write.
+ * value
+ *            Added value.
+ */
+int var_setOctetString(gxByteBuffer *buff, dlmsVARIANT *value)
 {
     if (value->vt == DLMS_DATA_TYPE_STRING)
     {
         gxByteBuffer bb;
         BYTE_BUFFER_INIT(&bb);
-        bb_addHexString(&bb, (char*)value->strVal->data);
+        bb_addHexString(&bb, (char *)value->strVal->data);
         hlp_setObjectCount(bb.size, buff);
         bb_set2(buff, &bb, 0, bb.size);
     }
@@ -250,27 +243,26 @@ int var_setOctetString(gxByteBuffer* buff, dlmsVARIANT* value)
 }
 
 int var_getBytes2(
-    dlmsVARIANT* data,
+    dlmsVARIANT *data,
     DLMS_DATA_TYPE type,
-    gxByteBuffer* ba)
+    gxByteBuffer *ba)
 {
     return var_getBytes3(data, type, ba, 1);
 }
 
 int var_getBytes3(
-    dlmsVARIANT* data,
+    dlmsVARIANT *data,
     DLMS_DATA_TYPE type,
-    gxByteBuffer* ba,
+    gxByteBuffer *ba,
     unsigned char addType)
 {
     return var_getBytes4(data, type, ba, addType, 1, 1);
 }
 
-
 int var_getBytes4(
-    dlmsVARIANT* data,
+    dlmsVARIANT *data,
     DLMS_DATA_TYPE type,
-    gxByteBuffer* ba,
+    gxByteBuffer *ba,
     unsigned char addType,
     unsigned char addArraySize,
     unsigned char addStructureSize)
@@ -290,14 +282,13 @@ int var_getBytes4(
     switch (type)
     {
     case DLMS_DATA_TYPE_OCTET_STRING:
-            ret = var_setOctetString(ba, data);
+        ret = var_setOctetString(ba, data);
         break;
     }
     return ret;
 }
 
-
-//Get size in bytes.
+// Get size in bytes.
 int var_getSize(DLMS_DATA_TYPE vt)
 {
     int nSize = -1;
@@ -330,31 +321,29 @@ int var_getSize(DLMS_DATA_TYPE vt)
     return nSize;
 }
 
-
-
-//copy variant.
-int var_copy(dlmsVARIANT* target, dlmsVARIANT* source)
+// copy variant.
+int var_copy(dlmsVARIANT *target, dlmsVARIANT *source)
 {
 #ifndef DLMS_IGNORE_MALLOC
-    dlmsVARIANT* it;
-    dlmsVARIANT* item;
-#endif //DLMS_IGNORE_MALLOC
+    dlmsVARIANT *it;
+    dlmsVARIANT *item;
+#endif // DLMS_IGNORE_MALLOC
     int ret = DLMS_ERROR_CODE_OK;
     if ((source->vt & DLMS_DATA_TYPE_BYREF) != 0)
     {
-       //skip
+        // skip
         return 0;
     }
     if ((target->vt & DLMS_DATA_TYPE_BYREF) != 0)
     {
-        //skip
+        // skip
         return 0;
     }
 
     unsigned char attaced = 0;
 
     ret = var_clear(target);
- 
+
     if (ret != DLMS_ERROR_CODE_OK)
     {
         return ret;
@@ -364,7 +353,7 @@ int var_copy(dlmsVARIANT* target, dlmsVARIANT* source)
     {
         if (source->strVal != NULL)
         {
-            target->strVal = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
+            target->strVal = (gxByteBuffer *)gxmalloc(sizeof(gxByteBuffer));
             BYTE_BUFFER_INIT(target->strVal);
             bb_set(target->strVal, source->strVal->data, source->strVal->size);
         }
@@ -373,7 +362,7 @@ int var_copy(dlmsVARIANT* target, dlmsVARIANT* source)
     {
         if (source->byteArr != 0)
         {
-            target->byteArr = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
+            target->byteArr = (gxByteBuffer *)gxmalloc(sizeof(gxByteBuffer));
             BYTE_BUFFER_INIT(target->byteArr);
             bb_set(target->byteArr, source->byteArr->data, source->byteArr->size);
         }
@@ -390,7 +379,7 @@ int var_copy(dlmsVARIANT* target, dlmsVARIANT* source)
     return ret;
 }
 
-int var_addBytes(dlmsVARIANT* data, const unsigned char* value, uint16_t count)
+int var_addBytes(dlmsVARIANT *data, const unsigned char *value, uint16_t count)
 {
     if (data->vt != DLMS_DATA_TYPE_OCTET_STRING)
     {
@@ -398,22 +387,21 @@ int var_addBytes(dlmsVARIANT* data, const unsigned char* value, uint16_t count)
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
 #else
         var_clear(data);
-        data->byteArr = (gxByteBuffer*)gxmalloc(sizeof(gxByteBuffer));
+        data->byteArr = (gxByteBuffer *)gxmalloc(sizeof(gxByteBuffer));
         BYTE_BUFFER_INIT(data->byteArr);
         data->vt = DLMS_DATA_TYPE_OCTET_STRING;
-#endif //DLMS_IGNORE_MALLOC
+#endif // DLMS_IGNORE_MALLOC
     }
 #ifndef DLMS_IGNORE_MALLOC
     else
     {
         bb_clear(data->byteArr);
     }
-#endif //DLMS_IGNORE_MALLOC
+#endif // DLMS_IGNORE_MALLOC
     return bb_set(data->byteArr, value, count);
 }
 
-
-int var_toInteger(dlmsVARIANT* data)
+int var_toInteger(dlmsVARIANT *data)
 {
     int ret;
     switch (data->vt)
@@ -422,7 +410,7 @@ int var_toInteger(dlmsVARIANT* data)
         ret = 0;
         break;
     case DLMS_DATA_TYPE_STRING:
-        ret = hlp_stringToInt((const char*)data->strVal);
+        ret = hlp_stringToInt((const char *)data->strVal);
         break;
 #ifndef DLMS_IGNORE_DELTA
     case DLMS_DATA_TYPE_DELTA_UINT32:
@@ -431,7 +419,7 @@ int var_toInteger(dlmsVARIANT* data)
     case DLMS_DATA_TYPE_UINT32:
         ret = data->ulVal;
         break;
-#endif //DLMS_IGNORE_DELTA
+#endif // DLMS_IGNORE_DELTA
     default:
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
         assert(0);
@@ -443,13 +431,10 @@ int var_toInteger(dlmsVARIANT* data)
     return 0;
 }
 
-
-
-
-int var_clear(dlmsVARIANT* data)
+int var_clear(dlmsVARIANT *data)
 {
 
-    //Referenced values are not cleared. User must do it.
+    // Referenced values are not cleared. User must do it.
     if ((data->vt & DLMS_DATA_TYPE_BYREF) != 0)
     {
         data->llVal = 0;
@@ -457,10 +442,10 @@ int var_clear(dlmsVARIANT* data)
     }
     switch (data->vt)
     {
-    if ((data->vt & DLMS_DATA_TYPE_BYREF) != 0)
-    {
-        return 0;
-    }
+        if ((data->vt & DLMS_DATA_TYPE_BYREF) != 0)
+        {
+            return 0;
+        }
     case DLMS_DATA_TYPE_OCTET_STRING:
         if (data->byteArr != NULL)
         {

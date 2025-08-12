@@ -5,6 +5,6 @@
 #include "gxobjects.h"
 #include "dlmssettings.h"
 #include "gxvalueeventargs.h"
-    int cosem_setValue(dlmsSettings* settings, gxValueEventArg *e);
+int cosem_setValue(dlmsSettings *settings, gxValueEventArg *e);
 
-#endif//COSEM_SET_H
+#endif // COSEM_SET_H

@@ -7,14 +7,13 @@
 #include "../include/dlms.h"
 #include "../include/cosem.h"
 
-
 #ifndef DLMS_IGNORE_DATA
-int cosem_setData(gxValueEventArg* e)
+int cosem_setData(gxValueEventArg *e)
 {
     int ret;
     if (e->index == 2)
     {
-        ret = var_copy(&((gxData*)e->target)->value, &e->value);
+        ret = var_copy(&((gxData *)e->target)->value, &e->value);
     }
     else
     {
@@ -22,17 +21,16 @@ int cosem_setData(gxValueEventArg* e)
     }
     return ret;
 }
-#endif //DLMS_IGNORE_DATA
+#endif // DLMS_IGNORE_DATA
 
-
-int cosem_setRegister(gxRegister* object, unsigned char index, dlmsVARIANT* value)
+int cosem_setRegister(gxRegister *object, unsigned char index, dlmsVARIANT *value)
 {
     int ret = 0;
     if (index == 2)
     {
         ret = var_copy(&object->value, value);
     }
-   
+
     else
     {
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
@@ -40,7 +38,7 @@ int cosem_setRegister(gxRegister* object, unsigned char index, dlmsVARIANT* valu
     return ret;
 }
 
-int cosem_setDisconnectControl(gxDisconnectControl* object, unsigned char index, dlmsVARIANT* value)
+int cosem_setDisconnectControl(gxDisconnectControl *object, unsigned char index, dlmsVARIANT *value)
 {
     if (index == 2)
     {

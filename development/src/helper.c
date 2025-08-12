@@ -5,9 +5,9 @@
 #include "../include/gxmem.h"
 
 int hlp_hexToBytes(
-    const char* str,
-    unsigned char** buffer,
-    uint16_t* count)
+    const char *str,
+    unsigned char **buffer,
+    uint16_t *count)
 {
     *count = 0;
     if (buffer != NULL && *buffer != NULL)
@@ -23,7 +23,7 @@ int hlp_hexToBytes(
     {
         return 0;
     }
-    unsigned char* tmp = (unsigned char*)gxmalloc(len / 2);
+    unsigned char *tmp = (unsigned char *)gxmalloc(len / 2);
     if (tmp == NULL)
     {
         return DLMS_ERROR_CODE_OUTOFMEMORY;
@@ -56,15 +56,15 @@ int hlp_hexToBytes(
     if (len / 2 != *count)
     {
 #ifdef gxrealloc
-        //If compiler supports realloc.
-        * buffer = gxrealloc(*buffer, *count);
+        // If compiler supports realloc.
+        *buffer = gxrealloc(*buffer, *count);
         if (tmp == NULL)
         {
             return DLMS_ERROR_CODE_OUTOFMEMORY;
         }
 #else
-        //A few extra bytes are returned if compiler doesn't support realloc.
-#endif // gxrealloc  
+        // A few extra bytes are returned if compiler doesn't support realloc.
+#endif // gxrealloc
     }
     return 0;
 }
@@ -76,7 +76,6 @@ unsigned char hlp_rand(void)
     bit = ((lfsr >> 0) ^ (lfsr >> 2) ^ (lfsr >> 3) ^ (lfsr >> 5)) & 1;
     return (unsigned char)(lfsr = (uint16_t)((lfsr >> 1) | (bit << 15)));
 }
-
 
 unsigned char hlp_getValue(char c)
 {
@@ -99,9 +98,8 @@ unsigned char hlp_getValue(char c)
     return value;
 }
 
-
 // Set count of items.
-int hlp_setObjectCount(uint32_t count, gxByteBuffer* buff)
+int hlp_setObjectCount(uint32_t count, gxByteBuffer *buff)
 {
     int ret;
     if (count < 0x80)
@@ -132,15 +130,15 @@ int hlp_setObjectCount(uint32_t count, gxByteBuffer* buff)
     return ret;
 }
 
-char* hlp_bytesToHex(const unsigned char* bytes, int count)
+char *hlp_bytesToHex(const unsigned char *bytes, int count)
 {
-    const char hexArray[] = { '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' };
+    const char hexArray[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
     unsigned char tmp;
     int pos;
-    char* hexChars;
+    char *hexChars;
     if (count != 0)
     {
-        hexChars = (char*)gxmalloc(3 * count);
+        hexChars = (char *)gxmalloc(3 * count);
         if (hexChars != NULL)
         {
             for (pos = 0; pos != count; ++pos)
@@ -155,28 +153,28 @@ char* hlp_bytesToHex(const unsigned char* bytes, int count)
     }
     else
     {
-        hexChars = (char*)gxmalloc(1);
+        hexChars = (char *)gxmalloc(1);
         hexChars[0] = '\0';
     }
     return hexChars;
 }
 
-int hlp_setLogicalName(unsigned char ln[6], const char* name)
+int hlp_setLogicalName(unsigned char ln[6], const char *name)
 {
-    char* ch;
-    char* pOriginalBuff;
-    char* pBuff;
+    char *ch;
+    char *pOriginalBuff;
+    char *pBuff;
     int val = 0, count = 0, size = (int)strlen(name);
     if (size < 11)
     {
         return -1;
     }
-    pBuff = (char*)gxmalloc(size + 1);
+    pBuff = (char *)gxmalloc(size + 1);
     pOriginalBuff = pBuff;
     memcpy(pBuff, name, size);
     pBuff[size] = 0;
-    //AVR compiler can't handle this if casting to char* is removed.
-    while ((ch = (char*)strchr(pBuff, '.')) != NULL)
+    // AVR compiler can't handle this if casting to char* is removed.
+    while ((ch = (char *)strchr(pBuff, '.')) != NULL)
     {
         *ch = '\0';
         val = hlp_stringToInt(pBuff);
@@ -210,7 +208,6 @@ int hlp_setLogicalName(unsigned char ln[6], const char* name)
     return DLMS_ERROR_CODE_OK;
 }
 
-
 unsigned char hlp_swapBits(unsigned char value)
 {
     unsigned char ret = 0, pos;
@@ -222,7 +219,7 @@ unsigned char hlp_swapBits(unsigned char value)
     return ret;
 }
 
-int hlp_intToString(char* str, int bufsize, int32_t value, unsigned char isSigned, unsigned char digits)
+int hlp_intToString(char *str, int bufsize, int32_t value, unsigned char isSigned, unsigned char digits)
 {
     int cnt = 0;
     int32_t val = value;
@@ -243,7 +240,7 @@ int hlp_intToString(char* str, int bufsize, int32_t value, unsigned char isSigne
     {
         --digits;
     }
-    //Find length.
+    // Find length.
     while ((val = (val / 10)) > 0)
     {
         ++str;
@@ -283,8 +280,7 @@ int hlp_intToString(char* str, int bufsize, int32_t value, unsigned char isSigne
     return cnt;
 }
 
-
-int32_t hlp_stringToInt2(const char* str, const char* end)
+int32_t hlp_stringToInt2(const char *str, const char *end)
 {
     if (str == NULL)
     {
@@ -314,12 +310,12 @@ int32_t hlp_stringToInt2(const char* str, const char* end)
     return value;
 }
 
-int32_t hlp_stringToInt(const char* str)
+int32_t hlp_stringToInt(const char *str)
 {
     return hlp_stringToInt2(str, NULL);
 }
 
-int hlp_getObjectCount2(gxByteBuffer* buff, uint16_t* count)
+int hlp_getObjectCount2(gxByteBuffer *buff, uint16_t *count)
 {
     int ret;
     unsigned char ch;
@@ -357,7 +353,7 @@ int hlp_getObjectCount2(gxByteBuffer* buff, uint16_t* count)
     return ret;
 }
 
-int hlp_uint64ToString(char* str, int bufsize, uint64_t value, unsigned char digits)
+int hlp_uint64ToString(char *str, int bufsize, uint64_t value, unsigned char digits)
 {
     int cnt = 0;
     uint64_t val = value;
@@ -365,7 +361,7 @@ int hlp_uint64ToString(char* str, int bufsize, uint64_t value, unsigned char dig
     {
         --digits;
     }
-    //Find length.
+    // Find length.
     while ((val = (val / 10)) > 0)
     {
         ++str;
@@ -405,10 +401,9 @@ int hlp_uint64ToString(char* str, int bufsize, uint64_t value, unsigned char dig
     return cnt;
 }
 
-
 double hlp_getScaler(int scaler)
 {
-    //If OS
+    // If OS
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
     return pow((float)10, scaler);
 #else
@@ -431,7 +426,7 @@ double hlp_getScaler(int scaler)
 #endif
 }
 
-int hlp_getLogicalNameToString(const unsigned char value[6], char* ln)
+int hlp_getLogicalNameToString(const unsigned char value[6], char *ln)
 {
     int ret;
 #if defined(_WIN32) || defined(_WIN64)
@@ -439,7 +434,7 @@ int hlp_getLogicalNameToString(const unsigned char value[6], char* ln)
     ret = sprintf_s(ln, 25, "%d.%d.%d.%d.%d.%d", value[0], value[1], value[2], value[3], value[4], value[5]);
 #else
     ret = sprintf(ln, "%d.%d.%d.%d.%d.%d", value[0], value[1], value[2], value[3], value[4], value[5]);
-#endif  
+#endif
     if (ret != -1)
     {
         ret = 0;
@@ -485,6 +480,6 @@ int hlp_getLogicalNameToString(const unsigned char value[6], char* ln)
     {
         ret = 0;
     }
-#endif //WIN32
+#endif // WIN32
     return ret;
 }

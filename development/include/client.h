@@ -9,13 +9,13 @@ int cl_snrmRequest(
     dlmsSettings *settings,
     message *messages);
 
-        int cl_methodLN(
-        dlmsSettings* settings,
-        const unsigned char* name,
-        DLMS_OBJECT_TYPE objectType,
-        unsigned char index,
-        dlmsVARIANT* data,
-        message* messages);
+int cl_methodLN(
+    dlmsSettings *settings,
+    const unsigned char *name,
+    DLMS_OBJECT_TYPE objectType,
+    unsigned char index,
+    dlmsVARIANT *data,
+    message *messages);
 
 int cl_getData2(
     dlmsSettings *settings,
@@ -24,37 +24,34 @@ int cl_getData2(
     gxReplyData *notify,
     unsigned char *isNotify);
 
-
 int cl_method(
-dlmsSettings* settings,
-gxObject* object,
-unsigned char index,
-dlmsVARIANT* data,
-message* messages);
+    dlmsSettings *settings,
+    gxObject *object,
+    unsigned char index,
+    dlmsVARIANT *data,
+    message *messages);
 
+int cl_method2(
+    dlmsSettings *settings,
+    gxObject *object,
+    unsigned char index,
+    unsigned char *value,
+    uint32_t length,
+    message *messages);
 
-    int cl_method2(
-        dlmsSettings* settings,
-        gxObject* object,
-        unsigned char index,
-        unsigned char* value,
-        uint32_t length,
-        message* messages);
-
-            int cl_methodLN2(
-        dlmsSettings* settings,
-        unsigned char* name,
-        DLMS_OBJECT_TYPE objectType,
-        unsigned char index,
-        unsigned char* value,
-        uint32_t length,
-        message* messages);
-
+int cl_methodLN2(
+    dlmsSettings *settings,
+    unsigned char *name,
+    DLMS_OBJECT_TYPE objectType,
+    unsigned char index,
+    unsigned char *value,
+    uint32_t length,
+    message *messages);
 
 int cl_releaseRequest2(
-dlmsSettings* settings,
-message* packets,
-unsigned char useProtectedRelease);
+    dlmsSettings *settings,
+    message *packets,
+    unsigned char useProtectedRelease);
 
 int cl_parseUAResponse(
     dlmsSettings *settings,
@@ -65,33 +62,31 @@ int cl_aarqRequest(
     message *messages);
 
 int cl_read(
-dlmsSettings* settings,
-gxObject* object,
-unsigned char attributeOrdinal,
-message* messages);
+    dlmsSettings *settings,
+    gxObject *object,
+    unsigned char attributeOrdinal,
+    message *messages);
 
-    int cl_readLN(
-        dlmsSettings* settings,
-        const unsigned char* name,
-        DLMS_OBJECT_TYPE interfaceClass,
-        unsigned char attributeOrdinal,
-        gxByteBuffer* data,
-        message* messages);
+int cl_readLN(
+    dlmsSettings *settings,
+    const unsigned char *name,
+    DLMS_OBJECT_TYPE interfaceClass,
+    unsigned char attributeOrdinal,
+    gxByteBuffer *data,
+    message *messages);
 
-
-            int cl_updateValue(
-        dlmsSettings* settings,
-        gxObject* object,
-        unsigned char attributeOrdinal,
-        dlmsVARIANT* value);
-
+int cl_updateValue(
+    dlmsSettings *settings,
+    gxObject *object,
+    unsigned char attributeOrdinal,
+    dlmsVARIANT *value);
 
 int cl_parseAAREResponse(
     dlmsSettings *settings,
     gxByteBuffer *data);
-    
+
 int cl_parseApplicationAssociationResponse(
-        dlmsSettings* settings,
-        gxByteBuffer* reply);
+    dlmsSettings *settings,
+    gxByteBuffer *reply);
 
 #endif

@@ -137,13 +137,12 @@ int cl_parseUAResponse(dlmsSettings *settings, gxByteBuffer *data)
     return ret;
 }
 
-
 /**
-* Generates a release request.
-*
-* @return Release request, as byte array.
-*/
-int cl_releaseRequest2(dlmsSettings* settings, message* packets, unsigned char useProtectedRelease)
+ * Generates a release request.
+ *
+ * @return Release request, as byte array.
+ */
+int cl_releaseRequest2(dlmsSettings *settings, message *packets, unsigned char useProtectedRelease)
 {
     int ret;
     gxByteBuffer bb;
@@ -183,13 +182,13 @@ int cl_releaseRequest2(dlmsSettings* settings, message* packets, unsigned char u
     {
         gxLNParameters p;
         params_initLN(&p, settings, 0,
-            DLMS_COMMAND_RELEASE_REQUEST, DLMS_SET_COMMAND_TYPE_NORMAL,
-            &bb, NULL, 0xff, DLMS_COMMAND_NONE, 0, 0);
+                      DLMS_COMMAND_RELEASE_REQUEST, DLMS_SET_COMMAND_TYPE_NORMAL,
+                      &bb, NULL, 0xff, DLMS_COMMAND_NONE, 0, 0);
         ret = dlms_getLnMessages(&p, packets);
     }
 
     bb_clear(&bb);
-    //Restore default values.
+    // Restore default values.
     settings->maxPduSize = settings->initializePduSize;
     return ret;
 }
@@ -448,14 +447,14 @@ int cl_getApplicationAssociationRequest(
         pw = &settings->password;
     }
     ret = dlms_secure(settings,
-    #ifndef DLMS_IGNORE_HIGH_GMAC
-    settings->cipher.invocationCounter,
-    #else
-        0,
-    #endif //DLMS_IGNORE_HIGH_GMAC
-        & settings->stoCChallenge,
-        pw,
-        &challenge);
+#ifndef DLMS_IGNORE_HIGH_GMAC
+                      settings->cipher.invocationCounter,
+#else
+                      0,
+#endif // DLMS_IGNORE_HIGH_GMAC
+                      &settings->stoCChallenge,
+                      pw,
+                      &challenge);
 #if !defined(DLMS_IGNORE_HIGH_GMAC) || !defined(DLMS_IGNORE_HIGH_SHA256)
     bb_clear(&pw2);
 #endif //! defined(DLMS_IGNORE_HIGH_GMAC) || !defined(DLMS_IGNORE_HIGH_SHA256)
@@ -500,7 +499,7 @@ int cl_parseApplicationAssociationResponse(
     if ((ret = cosem_getOctetString(reply, &value)) != 0)
     {
         settings->connected &= ~DLMS_CONNECTION_STATE_DLMS;
-        //ParseApplicationAssociationResponse failed. Server to Client do not match.
+        // ParseApplicationAssociationResponse failed. Server to Client do not match.
         return DLMS_ERROR_CODE_AUTHENTICATION_FAILURE;
     }
     empty = value.size == 0;
@@ -520,11 +519,11 @@ int cl_parseApplicationAssociationResponse(
             bb_clear(&challenge);
         }
         if ((ret = dlms_secure(
-            settings,
-            ic,
-            &settings->ctoSChallenge,
-            secret,
-            &challenge)) != 0)
+                 settings,
+                 ic,
+                 &settings->ctoSChallenge,
+                 secret,
+                 &challenge)) != 0)
         {
             return ret;
         }
@@ -622,10 +621,10 @@ int cl_readLN(
 }
 
 int cl_updateValue(
-    dlmsSettings* settings,
-    gxObject* target,
+    dlmsSettings *settings,
+    gxObject *target,
     unsigned char attributeIndex,
-    dlmsVARIANT* value)
+    dlmsVARIANT *value)
 {
     gxValueEventArg e;
     if (target == NULL)
@@ -638,99 +637,95 @@ int cl_updateValue(
     return cosem_setValue(settings, &e);
 }
 
- int cl_methodLN2(
-        dlmsSettings * settings,
-        unsigned char *name,
-        DLMS_OBJECT_TYPE objectType,
-        unsigned char index,
-        unsigned char *value,
-        uint32_t length,
-        message *messages)
+int cl_methodLN2(
+    dlmsSettings *settings,
+    unsigned char *name,
+    DLMS_OBJECT_TYPE objectType,
+    unsigned char index,
+    unsigned char *value,
+    uint32_t length,
+    message *messages)
+{
+    int ret = 0;
+    gxLNParameters p;
+    gxByteBuffer *pdu;
+    gxByteBuffer data;
+    if (index < 1)
     {
-        int ret = 0;
-        gxLNParameters p;
-        gxByteBuffer *pdu;
-        gxByteBuffer data;
-        if (index < 1)
-        {
-            // Invalid parameter
-            return DLMS_ERROR_CODE_INVALID_PARAMETER;
-        }
+        // Invalid parameter
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
 #ifdef DLMS_IGNORE_MALLOC
-        if (settings->serializedPdu == NULL)
-        {
-            // Invalid parameter
-            return DLMS_ERROR_CODE_INVALID_PARAMETER;
-        }
-        pdu = settings->serializedPdu;
-        // Use same buffer for header and data. Header size is 10 bytes.
-        BYTE_BUFFER_INIT(&data);
-        bb_clear(pdu);
+    if (settings->serializedPdu == NULL)
+    {
+        // Invalid parameter
+        return DLMS_ERROR_CODE_INVALID_PARAMETER;
+    }
+    pdu = settings->serializedPdu;
+    // Use same buffer for header and data. Header size is 10 bytes.
+    BYTE_BUFFER_INIT(&data);
+    bb_clear(pdu);
 #else
     gxByteBuffer bb;
     BYTE_BUFFER_INIT(&bb);
     pdu = &bb;
     BYTE_BUFFER_INIT(&data);
 #endif // DLMS_IGNORE_MALLOC
-        resetBlockIndex(settings);
-        // CI
-        if ((ret = bb_setUInt16(pdu, objectType)) == 0 &&
-            // Add LN
-            (ret = bb_set(pdu, name, 6)) == 0 &&
-            // Attribute ID.
-            (ret = bb_setUInt8(pdu, index)) == 0 &&
-            // Is Method Invocation Parameters used.
-            (ret = bb_setUInt8(pdu, 1)) == 0)
-        {
-            ret = bb_set(pdu, value, length);
-        }
-        if (ret == 0)
-        {
-            params_initLN(&p, settings, 0,
-                          DLMS_COMMAND_METHOD_REQUEST, DLMS_ACTION_COMMAND_TYPE_NORMAL,
-                          pdu, &data, 0xff, DLMS_COMMAND_NONE, 0, 0);
-            ret = dlms_getLnMessages(&p, messages);
-        }
-        bb_clear(&data);
-        bb_clear(pdu);
-        return ret;
-    }
-
-
- int cl_method2(
-        dlmsSettings * settings,
-        gxObject * object,
-        unsigned char index,
-        unsigned char *value,
-        uint32_t length,
-        message *messages)
+    resetBlockIndex(settings);
+    // CI
+    if ((ret = bb_setUInt16(pdu, objectType)) == 0 &&
+        // Add LN
+        (ret = bb_set(pdu, name, 6)) == 0 &&
+        // Attribute ID.
+        (ret = bb_setUInt8(pdu, index)) == 0 &&
+        // Is Method Invocation Parameters used.
+        (ret = bb_setUInt8(pdu, 1)) == 0)
     {
-        int ret;
-        if (settings->useLogicalNameReferencing)
-        {
-            ret = cl_methodLN2(settings, object->logicalName, object->objectType, index, value, length, messages);
-        }
-       
-        return ret;
+        ret = bb_set(pdu, value, length);
     }
-
-  int cl_method(
-        dlmsSettings * settings,
-        gxObject * object,
-        unsigned char index,
-        dlmsVARIANT *data,
-        message *messages)
+    if (ret == 0)
     {
-        int ret;
-        if (settings->useLogicalNameReferencing)
-        {
-            ret = cl_methodLN(settings, object->logicalName, object->objectType, index, data, messages);
-        }
-        return ret;
+        params_initLN(&p, settings, 0,
+                      DLMS_COMMAND_METHOD_REQUEST, DLMS_ACTION_COMMAND_TYPE_NORMAL,
+                      pdu, &data, 0xff, DLMS_COMMAND_NONE, 0, 0);
+        ret = dlms_getLnMessages(&p, messages);
+    }
+    bb_clear(&data);
+    bb_clear(pdu);
+    return ret;
+}
+
+int cl_method2(
+    dlmsSettings *settings,
+    gxObject *object,
+    unsigned char index,
+    unsigned char *value,
+    uint32_t length,
+    message *messages)
+{
+    int ret;
+    if (settings->useLogicalNameReferencing)
+    {
+        ret = cl_methodLN2(settings, object->logicalName, object->objectType, index, value, length, messages);
     }
 
+    return ret;
+}
 
-
+int cl_method(
+    dlmsSettings *settings,
+    gxObject *object,
+    unsigned char index,
+    dlmsVARIANT *data,
+    message *messages)
+{
+    int ret;
+    if (settings->useLogicalNameReferencing)
+    {
+        ret = cl_methodLN(settings, object->logicalName, object->objectType, index, data, messages);
+    }
+    return ret;
+}
 
 int cl_read(
     dlmsSettings *settings,

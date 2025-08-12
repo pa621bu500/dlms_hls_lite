@@ -1,7 +1,7 @@
 #ifndef ENUMS_H
 #define ENUMS_H
 
-#define CIPHERING_HEADER_SIZE 22 //7 + 12 + 3
+#define CIPHERING_HEADER_SIZE 22 // 7 + 12 + 3
 
 typedef enum
 {
@@ -201,7 +201,7 @@ typedef enum
 typedef enum
 {
     DLMS_UNIT_NONE = 0,
-}DLMS_UNIT;
+} DLMS_UNIT;
 
 typedef enum
 {

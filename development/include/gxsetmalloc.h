@@ -6,10 +6,10 @@
 #include "gxvalueeventargs.h"
 
 #ifndef DLMS_IGNORE_DATA
-    int cosem_setData(gxValueEventArg* e);
-#endif //DLMS_IGNORE_DATA
+int cosem_setData(gxValueEventArg *e);
+#endif // DLMS_IGNORE_DATA
 #ifndef DLMS_IGNORE_REGISTER
-    int cosem_setRegister(gxRegister* object, unsigned char index, dlmsVARIANT* value);
-#endif //DLMS_IGNORE_REGISTER
+int cosem_setRegister(gxRegister *object, unsigned char index, dlmsVARIANT *value);
+#endif // DLMS_IGNORE_REGISTER
 
 #endif

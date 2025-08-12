@@ -15,15 +15,15 @@
 #ifndef DLMS_IGNORE_STRING_CONVERTER
 #include <string.h>
 #include "../include/objectarray.h"
-#endif //DLMS_IGNORE_STRING_CONVERTER
+#endif // DLMS_IGNORE_STRING_CONVERTER
 #else
 #include "../include/enums.h"
-#endif //DLMS_IGNORE_MALLOC
+#endif // DLMS_IGNORE_MALLOC
 #include <string.h>
 #include "../include/helpers.h"
 #include "../include/errorcodes.h"
 
-int obj_DataToString(gxData* object, char** buff)
+int obj_DataToString(gxData *object, char **buff)
 {
     int ret;
     gxByteBuffer ba;
@@ -38,23 +38,22 @@ int obj_DataToString(gxData* object, char** buff)
     return ret;
 }
 
-
-const char* obj_getUnitAsString(unsigned char unit)
+const char *obj_getUnitAsString(unsigned char unit)
 {
-    const char* ret;
+    const char *ret;
     switch (unit)
     {
-        case DLMS_UNIT_NONE:
+    case DLMS_UNIT_NONE:
         ret = GET_STR_FROM_EEPROM("None");
         break;
-        default:
+    default:
         ret = NULL;
         break;
     }
     return ret;
 }
 
-int obj_disconnectControlToString(gxDisconnectControl* object, char** buff)
+int obj_disconnectControlToString(gxDisconnectControl *object, char **buff)
 {
     gxByteBuffer ba;
     BYTE_BUFFER_INIT(&ba);
@@ -70,7 +69,7 @@ int obj_disconnectControlToString(gxDisconnectControl* object, char** buff)
     return 0;
 }
 
-int obj_RegisterToString(gxRegister* object, char** buff)
+int obj_RegisterToString(gxRegister *object, char **buff)
 {
     int ret;
     gxByteBuffer ba;
@@ -89,23 +88,22 @@ int obj_RegisterToString(gxRegister* object, char** buff)
     return ret;
 }
 
-int obj_toString(gxObject* object, char** buff)
+int obj_toString(gxObject *object, char **buff)
 {
     int ret = 0;
-     switch (object->objectType)
+    switch (object->objectType)
     {
-        case DLMS_OBJECT_TYPE_DATA:
-        ret = obj_DataToString((gxData*)object, buff);
+    case DLMS_OBJECT_TYPE_DATA:
+        ret = obj_DataToString((gxData *)object, buff);
         break;
-        case DLMS_OBJECT_TYPE_REGISTER:
-        ret = obj_RegisterToString((gxRegister*)object, buff);
+    case DLMS_OBJECT_TYPE_REGISTER:
+        ret = obj_RegisterToString((gxRegister *)object, buff);
         break;
-          case DLMS_OBJECT_TYPE_DISCONNECT_CONTROL:
-        ret = obj_disconnectControlToString((gxDisconnectControl*)object, buff);
+    case DLMS_OBJECT_TYPE_DISCONNECT_CONTROL:
+        ret = obj_disconnectControlToString((gxDisconnectControl *)object, buff);
         break;
-         default: //Unknown type.
+    default: // Unknown type.
         ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     return ret;
 }
-

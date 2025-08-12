@@ -2,12 +2,12 @@
 
 void params_initLN(
     gxLNParameters *target,
-    dlmsSettings* settings,
+    dlmsSettings *settings,
     unsigned char invokeId,
     DLMS_COMMAND command,
     unsigned char commandType,
-    gxByteBuffer* attributeDescriptor,
-    gxByteBuffer* data,
+    gxByteBuffer *attributeDescriptor,
+    gxByteBuffer *data,
     unsigned char status,
     DLMS_COMMAND encryptedCommand,
     unsigned char multipleBlocks,
@@ -25,6 +25,6 @@ void params_initLN(
     target->status = status;
     target->multipleBlocks = multipleBlocks;
     target->lastBlock = lastBlock;
-    //Serialize data to this PDU.
+    // Serialize data to this PDU.
     target->serializedPdu = settings->serializedPdu;
 }

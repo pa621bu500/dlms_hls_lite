@@ -2,8 +2,7 @@
 #include "../include/gxmem.h"
 #include "../include/replydata.h"
 
-
-void reply_init(gxReplyData* reply)
+void reply_init(gxReplyData *reply)
 {
     reply->invokeId = 0;
     reply->commandType = 0;
@@ -29,11 +28,11 @@ void reply_init(gxReplyData* reply)
     reply->clientAddress = 0;
 }
 
-unsigned char reply_isMoreData(gxReplyData* reply)
+unsigned char reply_isMoreData(gxReplyData *reply)
 {
     return reply->moreData != DLMS_DATA_REQUEST_TYPES_NONE;
 }
-void reply_clear2(gxReplyData* reply, unsigned char clearData)
+void reply_clear2(gxReplyData *reply, unsigned char clearData)
 {
     reply->invokeId = 0;
     reply->moreData = DLMS_DATA_REQUEST_TYPES_NONE;
@@ -65,8 +64,7 @@ void reply_clear2(gxReplyData* reply, unsigned char clearData)
     reply->clientAddress = 0;
 }
 
-void reply_clear(gxReplyData* reply)
+void reply_clear(gxReplyData *reply)
 {
     reply_clear2(reply, 1);
 }
-

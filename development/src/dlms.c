@@ -17,8 +17,7 @@
 static const unsigned char LLC_SEND_BYTES[3] = {0xE6, 0xE6, 0x00};
 static const unsigned char LLC_REPLY_BYTES[3] = {0xE6, 0xE7, 0x00};
 static const unsigned char HDLC_FRAME_START_END = 0x7E;
-#define GET_AUTH_TAG(s)(s.broadcast ? 0x40 : 0) | DLMS_SECURITY_AUTHENTICATION | s.suite
-
+#define GET_AUTH_TAG(s) (s.broadcast ? 0x40 : 0) | DLMS_SECURITY_AUTHENTICATION | s.suite
 
 int getOctetString(gxByteBuffer *buff, gxDataInfo *info, unsigned char knownType, dlmsVARIANT *value)
 {
@@ -97,8 +96,7 @@ static int getBool(gxByteBuffer *buff, gxDataInfo *info, dlmsVARIANT *value)
     return 0;
 }
 
-
-int dlms_getData(gxByteBuffer* data, gxDataInfo* info, dlmsVARIANT* value)
+int dlms_getData(gxByteBuffer *data, gxDataInfo *info, dlmsVARIANT *value)
 {
     unsigned char ch, knownType;
     int ret = 0;
@@ -117,35 +115,34 @@ int dlms_getData(gxByteBuffer* data, gxDataInfo* info, dlmsVARIANT* value)
     }
     switch (info->type & ~DLMS_DATA_TYPE_BYREF)
     {
-        case DLMS_DATA_TYPE_UINT32:
-            ret = getUInt32(data, info, value);
-            break;
-        case DLMS_DATA_TYPE_OCTET_STRING:
-            ret = getOctetString(data, info, knownType, value);
-            break;
-        case DLMS_DATA_TYPE_BOOLEAN:
-            {
-                ret = getBool(data, info, value);
-                break;
-            }
+    case DLMS_DATA_TYPE_UINT32:
+        ret = getUInt32(data, info, value);
+        break;
+    case DLMS_DATA_TYPE_OCTET_STRING:
+        ret = getOctetString(data, info, knownType, value);
+        break;
+    case DLMS_DATA_TYPE_BOOLEAN:
+    {
+        ret = getBool(data, info, value);
+        break;
+    }
     }
     if (ret == 0 && (value->vt & DLMS_DATA_TYPE_BYREF) == 0)
     {
         value->vt = info->type;
     }
-     return ret;
+    return ret;
 }
 
-
-int dlms_getValueFromData(dlmsSettings* settings,
-    gxReplyData* reply)
+int dlms_getValueFromData(dlmsSettings *settings,
+                          gxReplyData *reply)
 {
     uint16_t index;
     int ret;
 #if !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
     int pos;
     dlmsVARIANT_PTR tmp;
-#endif //!defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
+#endif //! defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
     dlmsVARIANT value;
     gxDataInfo info;
     di_init(&info);
@@ -175,7 +172,8 @@ int dlms_getValueFromData(dlmsSettings* settings,
             {
                 reply->readPosition = reply->data.position;
             }
-        }else
+        }
+        else
         {
             if (reply->dataValue.vt == DLMS_DATA_TYPE_NONE)
             {
@@ -183,16 +181,16 @@ int dlms_getValueFromData(dlmsSettings* settings,
             }
             else
             {
-            #if !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
-                            for (pos = 0; pos != value.Arr->size; ++pos)
-                            {
-                                if ((ret = va_getByIndex(value.Arr, pos, &tmp)) != 0)
-                                {
-                                    return ret;
-                                }
-                                // va_push(reply->dataValue.Arr, tmp);
-                            }
-            #endif //! defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
+#if !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
+                for (pos = 0; pos != value.Arr->size; ++pos)
+                {
+                    if ((ret = va_getByIndex(value.Arr, pos, &tmp)) != 0)
+                    {
+                        return ret;
+                    }
+                    // va_push(reply->dataValue.Arr, tmp);
+                }
+#endif //! defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
             }
         }
 
@@ -200,8 +198,7 @@ int dlms_getValueFromData(dlmsSettings* settings,
         // Element count.
         reply->totalCount = info.count;
     }
-    else if (info.complete
-        && reply->command == DLMS_COMMAND_DATA_NOTIFICATION)
+    else if (info.complete && reply->command == DLMS_COMMAND_DATA_NOTIFICATION)
     {
         // If last item is null. This is a special case.
         reply->readPosition = reply->data.position;
@@ -209,8 +206,7 @@ int dlms_getValueFromData(dlmsSettings* settings,
     reply->data.position = index;
 
     // If last data frame of the data block is read.
-    if (reply->command != DLMS_COMMAND_DATA_NOTIFICATION
-        && info.complete && reply->moreData == DLMS_DATA_REQUEST_TYPES_NONE)
+    if (reply->command != DLMS_COMMAND_DATA_NOTIFICATION && info.complete && reply->moreData == DLMS_DATA_REQUEST_TYPES_NONE)
     {
         // If all blocks are read.
         resetBlockIndex(settings);
@@ -218,7 +214,6 @@ int dlms_getValueFromData(dlmsSettings* settings,
     }
     return 0;
 }
-
 
 unsigned char dlms_useDedicatedKey(dlmsSettings *settings)
 {
@@ -252,19 +247,18 @@ unsigned char dlms_getGloMessage(dlmsSettings *settings, DLMS_COMMAND command, D
     {
         switch (command)
         {
-            case DLMS_COMMAND_METHOD_REQUEST:
-                cmd = DLMS_COMMAND_GLO_METHOD_REQUEST;
-                break;
-            case DLMS_COMMAND_GET_REQUEST:
-                cmd = DLMS_COMMAND_GLO_GET_REQUEST;
-                break;
-            default:
-                cmd = DLMS_COMMAND_NONE;
+        case DLMS_COMMAND_METHOD_REQUEST:
+            cmd = DLMS_COMMAND_GLO_METHOD_REQUEST;
+            break;
+        case DLMS_COMMAND_GET_REQUEST:
+            cmd = DLMS_COMMAND_GLO_GET_REQUEST;
+            break;
+        default:
+            cmd = DLMS_COMMAND_NONE;
         }
     }
     return cmd;
 }
-
 
 /*
    - this function is used to build data link layer
@@ -647,18 +641,16 @@ int dlms_getLNPdu(
                 }
                 ret = bb_setUInt8(h, p->status);
             }
-             if (ret == 0 && p->data != NULL && p->data->size != 0)
+            if (ret == 0 && p->data != NULL && p->data->size != 0)
             {
                 len = bb_available(p->data);
                 if (len + reply->size > p->settings->maxPduSize)
                 {
                     len = (uint16_t)(p->settings->maxPduSize - h->size - p->data->size - p->data->position);
                 }
-    
+
                 ret = bb_set2(reply, p->data, p->data->position, len);
-
             }
-
         }
 #ifndef DLMS_IGNORE_HIGH_GMAC
         if (ret == 0 && ciphering && reply->size != 0 && p->command != DLMS_COMMAND_RELEASE_REQUEST)
@@ -691,19 +683,19 @@ int dlms_getLNPdu(
 #ifdef DLMS_TRACE_PDU
             cip_tracePdu(1, reply);
 #endif // DLMS_TRACE_PDU
-                        ret = cip_encrypt(
-                            &p->settings->cipher,
-                            p->settings->cipher.security,
-                            DLMS_COUNT_TYPE_PACKET,
-                            p->settings->cipher.invocationCounter,
-                            dlms_getGloMessage(p->settings, p->command, p->encryptedCommand),
-            #ifndef DLMS_IGNORE_MALLOC
-                            p->settings->cipher.systemTitle.data,
-            #else
-                            p->settings->cipher.systemTitle,
-            #endif //DLMS_IGNORE_MALLOC
-                            key,
-                            reply);
+            ret = cip_encrypt(
+                &p->settings->cipher,
+                p->settings->cipher.security,
+                DLMS_COUNT_TYPE_PACKET,
+                p->settings->cipher.invocationCounter,
+                dlms_getGloMessage(p->settings, p->command, p->encryptedCommand),
+#ifndef DLMS_IGNORE_MALLOC
+                p->settings->cipher.systemTitle.data,
+#else
+                p->settings->cipher.systemTitle,
+#endif // DLMS_IGNORE_MALLOC
+                key,
+                reply);
         }
 #endif // DLMS_IGNORE_HIGH_GMAC1
     }
@@ -716,17 +708,16 @@ int dlms_getLNPdu(
     return ret;
 }
 
-
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
-int dlms_getDataFromBlock(gxByteBuffer* data, uint32_t index)
+int dlms_getDataFromBlock(gxByteBuffer *data, uint32_t index)
 #else
-int dlms_getDataFromBlock(gxByteBuffer* data, uint16_t index)
+int dlms_getDataFromBlock(gxByteBuffer *data, uint16_t index)
 #endif
 {
 #if defined(GX_DLMS_BYTE_BUFFER_SIZE_32) || (!defined(GX_DLMS_MICROCONTROLLER) && (defined(_WIN32) || defined(_WIN64) || defined(__linux__)))
     uint32_t pos, len = data->position - index;
 #else
-    //EVS2 NOT SUPPORTED
+    // EVS2 NOT SUPPORTED
 #endif
     if (data->size == data->position)
     {
@@ -739,22 +730,19 @@ int dlms_getDataFromBlock(gxByteBuffer* data, uint16_t index)
     return 0;
 }
 
-int dlms_verifyInvokeId(dlmsSettings* settings, gxReplyData* reply)
+int dlms_verifyInvokeId(dlmsSettings *settings, gxReplyData *reply)
 {
     if (settings->autoIncreaseInvokeID && reply->invokeId != dlms_getInvokeIDPriority(settings, 0))
     {
-        //Invalid invoke ID.
+        // Invalid invoke ID.
         return DLMS_ERROR_CODE_INVALID_INVOKE_ID;
     }
     return 0;
 }
 
-
-
-
 int dlms_handleGetResponse(
-    dlmsSettings* settings,
-    gxReplyData* reply,
+    dlmsSettings *settings,
+    gxReplyData *reply,
     uint32_t index)
 {
     int ret;
@@ -883,7 +871,7 @@ int dlms_handleGetResponse(
     }
     else
     {
-        //Invalid Get response.
+        // Invalid Get response.
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     return ret;
@@ -1177,13 +1165,12 @@ int dlms_handleMethodResponse(
     return DLMS_ERROR_CODE_OK;
 }
 
-
-//Return DLMS_ERROR_CODE_FALSE if LLC bytes are not included.
-int dlms_checkLLCBytes(dlmsSettings* settings, gxByteBuffer* data)
+// Return DLMS_ERROR_CODE_FALSE if LLC bytes are not included.
+int dlms_checkLLCBytes(dlmsSettings *settings, gxByteBuffer *data)
 {
     if (settings->server)
     {
-        //Check LLC bytes.
+        // Check LLC bytes.
         if (memcmp(data->data + data->position, LLC_SEND_BYTES, 3) != 0)
         {
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
@@ -1191,7 +1178,7 @@ int dlms_checkLLCBytes(dlmsSettings* settings, gxByteBuffer* data)
     }
     else
     {
-        //Check LLC bytes.
+        // Check LLC bytes.
         if (memcmp(data->data + data->position, LLC_REPLY_BYTES, 3) != 0)
         {
             return DLMS_ERROR_CODE_INVALID_PARAMETER;
@@ -1201,16 +1188,15 @@ int dlms_checkLLCBytes(dlmsSettings* settings, gxByteBuffer* data)
     return DLMS_ERROR_CODE_OK;
 }
 
-
 int dlms_getPdu(
-    dlmsSettings* settings,
-    gxReplyData* data,
+    dlmsSettings *settings,
+    gxReplyData *data,
     unsigned char first)
 {
     int ret = DLMS_ERROR_CODE_OK;
 #if !defined(DLMS_IGNORE_CLIENT)
     uint32_t index;
-#endif //!defined(DLMS_IGNORE_CLIENT)
+#endif //! defined(DLMS_IGNORE_CLIENT)
     unsigned char ch;
     DLMS_COMMAND cmd = data->command;
     // If header is not read yet or GBT message.
@@ -1224,8 +1210,8 @@ int dlms_getPdu(
         }
 #if !defined(DLMS_IGNORE_CLIENT)
         index = data->data.position;
-#endif //!defined(DLMS_IGNORE_CLIENT)
-        // Get command.
+#endif //! defined(DLMS_IGNORE_CLIENT)
+       // Get command.
         if ((ret = bb_getUInt8(&data->data, &ch)) != 0)
         {
             return ret;
@@ -1234,19 +1220,19 @@ int dlms_getPdu(
         data->command = cmd;
         switch (cmd)
         {
-        #if !defined(DLMS_IGNORE_CLIENT)
-        #if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
-//         case DLMS_COMMAND_READ_RESPONSE:
-//             if ((ret = dlms_handleReadResponse(settings, data, (uint16_t)index)) != 0)
-//             {
-//                 if (ret == DLMS_ERROR_CODE_FALSE)
-//                 {
-//                     return DLMS_ERROR_CODE_OK;
-//                 }
-//                 return ret;
-//             }
-//             break;
-// #endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
+#if !defined(DLMS_IGNORE_CLIENT)
+#if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
+            //         case DLMS_COMMAND_READ_RESPONSE:
+            //             if ((ret = dlms_handleReadResponse(settings, data, (uint16_t)index)) != 0)
+            //             {
+            //                 if (ret == DLMS_ERROR_CODE_FALSE)
+            //                 {
+            //                     return DLMS_ERROR_CODE_OK;
+            //                 }
+            //                 return ret;
+            //             }
+            //             break;
+            // #endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
         case DLMS_COMMAND_GET_RESPONSE:
             if ((ret = dlms_handleGetResponse(settings, data, index)) != 0)
             {
@@ -1257,27 +1243,27 @@ int dlms_getPdu(
                 return ret;
             }
             break;
-//         case DLMS_COMMAND_SET_RESPONSE:
-//             ret = dlms_handleSetResponse(settings, data);
-//             break;
-// #if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
-//         case DLMS_COMMAND_WRITE_RESPONSE:
-//             ret = dlms_handleWriteResponse(data);
-//             break;
-// #endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
+            //         case DLMS_COMMAND_SET_RESPONSE:
+            //             ret = dlms_handleSetResponse(settings, data);
+            //             break;
+            // #if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
+            //         case DLMS_COMMAND_WRITE_RESPONSE:
+            //             ret = dlms_handleWriteResponse(data);
+            //             break;
+            // #endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME) && !defined(DLMS_IGNORE_MALLOC)
         case DLMS_COMMAND_METHOD_RESPONSE:
             ret = dlms_handleMethodResponse(settings, data);
             break;
-//         case DLMS_COMMAND_GENERAL_BLOCK_TRANSFER:
-//             ret = dlms_handleGbt(settings, data);
-//             break;
-//         case DLMS_COMMAND_CONFIRMED_SERVICE_ERROR:
-//             ret = dlms_handleConfirmedServiceError(&data->data);
-//             break;
-//         case DLMS_COMMAND_EXCEPTION_RESPONSE:
-//             ret = dlms_handleExceptionResponse(&data->data);
-//             break;
-        #endif //!defined(DLMS_IGNORE_CLIENT)
+            //         case DLMS_COMMAND_GENERAL_BLOCK_TRANSFER:
+            //             ret = dlms_handleGbt(settings, data);
+            //             break;
+            //         case DLMS_COMMAND_CONFIRMED_SERVICE_ERROR:
+            //             ret = dlms_handleConfirmedServiceError(&data->data);
+            //             break;
+            //         case DLMS_COMMAND_EXCEPTION_RESPONSE:
+            //             ret = dlms_handleExceptionResponse(&data->data);
+            //             break;
+#endif //! defined(DLMS_IGNORE_CLIENT)
         case DLMS_COMMAND_AARQ:
         case DLMS_COMMAND_AARE:
             // This is parsed later.
@@ -1432,39 +1418,36 @@ int dlms_getPdu(
 //             default:
 //                 break;
 //             }
-#endif //DLMS_IGNORE_HIGH_GMAC
+#endif // DLMS_IGNORE_HIGH_GMAC
         }
     }
 
-// #if !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
-// #if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME)
-//     // Get data only blocks if SN is used. This is faster.
-//     if (ret == 0 && cmd == DLMS_COMMAND_READ_RESPONSE
-//         && data->commandType == DLMS_SINGLE_READ_RESPONSE_DATA_BLOCK_RESULT
-//         && (data->moreData & DLMS_DATA_REQUEST_TYPES_FRAME) != 0)
-//     {
-//         return 0;
-//     }
-// #endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME)
-//     // Get data if all data is read or we want to peek data.
-    if (ret == 0 && !data->ignoreValue && data->data.position != data->data.size
-        && (
+    // #if !defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
+    // #if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME)
+    //     // Get data only blocks if SN is used. This is faster.
+    //     if (ret == 0 && cmd == DLMS_COMMAND_READ_RESPONSE
+    //         && data->commandType == DLMS_SINGLE_READ_RESPONSE_DATA_BLOCK_RESULT
+    //         && (data->moreData & DLMS_DATA_REQUEST_TYPES_FRAME) != 0)
+    //     {
+    //         return 0;
+    //     }
+    // #endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME)
+    //     // Get data if all data is read or we want to peek data.
+    if (ret == 0 && !data->ignoreValue && data->data.position != data->data.size && (
 #if !defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME)
-            cmd == DLMS_COMMAND_READ_RESPONSE ||
-#endif //!defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME)
-            cmd == DLMS_COMMAND_GET_RESPONSE)
-        && (data->moreData == DLMS_DATA_REQUEST_TYPES_NONE
-            || data->peek))
+                                                                                        cmd == DLMS_COMMAND_READ_RESPONSE ||
+#endif //! defined(DLMS_IGNORE_ASSOCIATION_SHORT_NAME)
+                                                                                        cmd == DLMS_COMMAND_GET_RESPONSE) &&
+        (data->moreData == DLMS_DATA_REQUEST_TYPES_NONE || data->peek))
     {
         ret = dlms_getValueFromData(settings, data);
     }
-// #else
-//     data->dataValue.byteArr = &data->data;
-//     data->dataValue.vt = DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_OCTET_STRING;
-// #endif //!defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
+    // #else
+    //     data->dataValue.byteArr = &data->data;
+    //     data->dataValue.vt = DLMS_DATA_TYPE_BYREF | DLMS_DATA_TYPE_OCTET_STRING;
+    // #endif //!defined(DLMS_IGNORE_MALLOC) && !defined(DLMS_COSEM_EXACT_DATA_TYPES)
     return ret;
 }
-
 
 #if !defined(DLMS_IGNORE_CLIENT)
 int dlms_handleGloDedResponse(dlmsSettings *settings,
@@ -1896,7 +1879,7 @@ int dlms_getHdlcData(
             {
                 data->moreData = DLMS_DATA_REQUEST_TYPES_FRAME;
             }
-        }   
+        }
         else
         {
             dlms_checkLLCBytes(settings, reply);
@@ -2143,7 +2126,7 @@ int dlms_secure(
 
     // Get server Challenge.
     // Get shared secret
-  if (settings->authentication == DLMS_AUTHENTICATION_HIGH_GMAC)
+    if (settings->authentication == DLMS_AUTHENTICATION_HIGH_GMAC)
     {
         ret = cip_encrypt(
             &settings->cipher,

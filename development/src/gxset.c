@@ -41,35 +41,26 @@
 #include "../include/gxset.h"
 #include "../include/cosem.h"
 
-int cosem_setValue(dlmsSettings* settings, gxValueEventArg* e)
+int cosem_setValue(dlmsSettings *settings, gxValueEventArg *e)
 {
     int ret = DLMS_ERROR_CODE_OK;
     if (e->index == 1)
     {
-
-        // if (e->value.byteArr == NULL || e->value.byteArr->size - e->value.byteArr->position != 6)
-        // {
-        //     ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
-        // }
-        // else
-        // {
-        //     ret = bb_get(e->value.byteArr, e->target->logicalName, 6);
-        // }
-        // return ret;
+        printf("reached gxset.comsem_setvalue");
     }
     switch (e->target->objectType)
     {
-        case DLMS_OBJECT_TYPE_DATA:
-            ret = cosem_setData(e);
-            break;
-        case DLMS_OBJECT_TYPE_REGISTER:
-            ret = cosem_setRegister((gxRegister*)e->target, e->index, &e->value);
-            break;
-        case DLMS_OBJECT_TYPE_DISCONNECT_CONTROL:
-            ret = cosem_setDisconnectControl((gxDisconnectControl*)e->target, e->index, &e->value);
-            break;
-        default:
-            ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
+    case DLMS_OBJECT_TYPE_DATA:
+        ret = cosem_setData(e);
+        break;
+    case DLMS_OBJECT_TYPE_REGISTER:
+        ret = cosem_setRegister((gxRegister *)e->target, e->index, &e->value);
+        break;
+    case DLMS_OBJECT_TYPE_DISCONNECT_CONTROL:
+        ret = cosem_setDisconnectControl((gxDisconnectControl *)e->target, e->index, &e->value);
+        break;
+    default:
+        ret = DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
     return ret;
 }

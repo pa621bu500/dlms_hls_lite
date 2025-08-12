@@ -5,21 +5,20 @@
 #include "bytebuffer.h"
 typedef struct
 {
-    gxByteBuffer** data;
+    gxByteBuffer **data;
     unsigned char capacity;
     unsigned char size;
 #ifndef DLMS_IGNORE_MALLOC
     unsigned char attached;
-#endif //DLMS_IGNORE_MALLOC
+#endif // DLMS_IGNORE_MALLOC
 } message;
 
-
-void mes_init(message* mes);
+void mes_init(message *mes);
 void mes_clear(
-    message* mes);
+    message *mes);
 
-    int mes_push(
-    message* mes,
-    gxByteBuffer* item);
+int mes_push(
+    message *mes,
+    gxByteBuffer *item);
 
 #endif

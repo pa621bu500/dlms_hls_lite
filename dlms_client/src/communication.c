@@ -13,9 +13,10 @@
 #include <fcntl.h>
 
 #include "../include/poll_result.h"
-#include "../../development/include/errorcodes.h"
 #include "../include/communication.h"
 #include "../include/connection.h"
+
+#include "../../development/include/errorcodes.h"
 #include "../../development/include/cosem.h"
 #include "../../development/include/message.h"
 #include "../../development/include/replydata.h"
@@ -71,7 +72,7 @@ int com_method(
     if ((ret = cl_method(&connection->settings, object, attributeOrdinal, params, &messages)) != 0 ||
         (ret = com_readDataBlock(connection, &messages, &reply)) != 0)
     {
-         printf("Method failed");
+        printf("Method failed");
     }
     mes_clear(&messages);
     reply_clear(&reply);
@@ -250,7 +251,7 @@ int readData(connection *connection, gxByteBuffer *data, int *index)
     // }
     if (connection->trace > GX_TRACE_LEVEL_INFO)
     {
-        char* hex = hlp_bytesToHex(connection->data.data + *index, connection->data.size - *index);
+        char *hex = hlp_bytesToHex(connection->data.data + *index, connection->data.size - *index);
         if (*index == 0)
         {
             printf("\nRX:\t %s", hex);
@@ -566,7 +567,6 @@ int com_updateInvocationCounter(
     return ret;
 }
 
-
 int com_readValue_new(connection *connection, gxObject *object, unsigned char index, int comm_item, t_poll_result *poll_result)
 {
     int ret;
@@ -707,8 +707,6 @@ int parse_rx(char *data, int comm_item, t_poll_result *poll_result)
     }
 }
 
-
-
 int com_disconnect(
     connection *connection)
 {
@@ -809,9 +807,7 @@ int com_initializeConnection(
         if (connection->settings.authentication > DLMS_AUTHENTICATION_LOW)
         {
             if ((ret = cl_getApplicationAssociationRequest(&connection->settings, &messages)) != 0 ||
-                (ret = com_readDataBlock(connection, &messages, &reply)) != 0 
-                ||(ret = cl_parseApplicationAssociationResponse(&connection->settings, &reply.data)) != 0
-            )
+                (ret = com_readDataBlock(connection, &messages, &reply)) != 0 || (ret = cl_parseApplicationAssociationResponse(&connection->settings, &reply.data)) != 0)
             {
                 mes_clear(&messages);
                 reply_clear(&reply);
@@ -998,6 +994,6 @@ int com_initializeOpticalHead(
         printf("Failed to Open port. tcsetattr failed.\r");
         return DLMS_ERROR_CODE_INVALID_PARAMETER;
     }
-    
+
     return ret;
 }

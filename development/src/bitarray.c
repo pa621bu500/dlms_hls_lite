@@ -12,20 +12,20 @@
 #include "../include/helpers.h"
 
 void ba_attach(
-    bitArray* arr,
-    unsigned char* value,
+    bitArray *arr,
+    unsigned char *value,
     uint16_t count,
     uint16_t capacity)
 {
     arr->data = value;
     arr->capacity = (uint16_t)(0x8000 | capacity);
     arr->size = count;
-    #ifndef GX_DLMS_MICROCONTROLLER
-        arr->position = 0;
-    #endif //GX_DLMS_MICROCONTROLLER
+#ifndef GX_DLMS_MICROCONTROLLER
+    arr->position = 0;
+#endif // GX_DLMS_MICROCONTROLLER
 }
 
-//Return byte index where bit is saved.
+// Return byte index where bit is saved.
 int getByteIndex(int bitCount)
 {
     double d = bitCount;
@@ -33,8 +33,7 @@ int getByteIndex(int bitCount)
     return (int)d;
 }
 
-
-int ba_getByIndex(bitArray* arr, int index, unsigned char* value)
+int ba_getByIndex(bitArray *arr, int index, unsigned char *value)
 {
     char ch;
     if (index >= arr->size)
@@ -46,7 +45,7 @@ int ba_getByIndex(bitArray* arr, int index, unsigned char* value)
     return 0;
 }
 
-int ba_toInteger(bitArray* arr, uint32_t* value)
+int ba_toInteger(bitArray *arr, uint32_t *value)
 {
     *value = 0;
     unsigned char ch;

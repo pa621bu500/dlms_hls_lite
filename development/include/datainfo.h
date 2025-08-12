@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include "enums.h"
 
-
 typedef struct
 {
     // Last array index.
@@ -20,4 +19,4 @@ typedef struct
 
 void di_init(gxDataInfo *info);
 
-#endif //GXDATA_INFO_H
+#endif // GXDATA_INFO_H

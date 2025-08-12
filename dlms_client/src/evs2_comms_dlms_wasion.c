@@ -2,16 +2,16 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <assert.h>
-#include <string.h> /* memset */
+#include <string.h> 
 #include <unistd.h>
 #include <strings.h>
 
 #include "../include/communication.h"
 #include "../include/connection.h"
-#include "../../development/include/variant.h"
-// #include "../../development/include/gxserializer.h"
 #include "../include/poll_result.h"
+
 #include "../../development/include/bytebuffer.h"
+#include "../../development/include/variant.h"
 
 #define GET_METER_SN 100
 #define POLL_ITEM_TOTAL_ACTIVE_ENERGY 1300
@@ -29,10 +29,10 @@ const int supported_batches[] = {2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024,
 const char *invalid_arg_prompt = "Invalid arguments. Usage: %s --model=<4char> --batch=<yyyy> --mac=<int> --comm_item=<int> [--usb_offset=<int>]\n";
 bool is_dev = false;
 char model[5] = "";
-char *security_str="low";
+char *security_str="high";
 bool is_supported_model = false;
 bool is_supported_batch = false;
-bool useHls = 0;
+bool useHls = 1;
 bool debug=1;
 int batch_year = -1;
 int dest_mac = -1;
@@ -40,9 +40,8 @@ int comm_item = -1;
 int usb_offset = 0;
 bool arg_found_model = false;
 bool arg_found_batch = false;
-bool arg_found_mac = false;
+bool arg_found_meter_address = false;
 bool arg_found_comm_item = false;
-bool arg_found_usb_offset = false;
 bool arg_found_security = false;
 bool arg_found_env = false;
 
@@ -66,7 +65,7 @@ int parse_named_arg(char* arg, const char* prefix) {
     unsigned char ln[] = {0, 0, 96, 3, 10, 255}; // Logical Name for Disconnect Control
     INIT_OBJECT(dc, DLMS_OBJECT_TYPE_DISCONNECT_CONTROL, ln);
     dlmsVARIANT param;
-    GX_INT8(param) = 0;                                // parameter if needed by your meter
+    GX_INT8(param) = 0;                               
     ret = com_method(connection, &dc.base, 1, &param); // method 1 = disconnect (relay off)
     return ret;
 }
@@ -78,11 +77,10 @@ int relay_on(connection *connection)
     unsigned char ln[] = {0, 0, 96, 3, 10, 255}; // Logical Name for Disconnect Control
     INIT_OBJECT(dc, DLMS_OBJECT_TYPE_DISCONNECT_CONTROL, ln);
     dlmsVARIANT param;
-    GX_INT8(param) = 0;                                // parameter if needed by your meter
+    GX_INT8(param) = 0;                          
     ret = com_method(connection, &dc.base, 2, &param); // method 2 = reconnect (relay on)
     return ret;
 }
-
 
 int connectMeter(int argc, char *argv[])
 {
@@ -90,7 +88,6 @@ int connectMeter(int argc, char *argv[])
     gxByteBuffer item;
     bb_init(&item);
     con_init(&con, GX_TRACE_LEVEL_INFO);
-    // Initialize settings using Logical Name referencing and HDLC.
     cl_init(&con.settings, 1, 16, 1, DLMS_AUTHENTICATION_NONE, NULL, DLMS_INTERFACE_TYPE_HDLC);
     con.settings.interfaceType = DLMS_INTERFACE_TYPE_HDLC;
     int ret, opt = 0;
@@ -100,7 +97,6 @@ int connectMeter(int argc, char *argv[])
     char *p, *readObjects = NULL, *outputFile = NULL;
     int index, a, b, c, d, e, f;
     char *invocationCounter = NULL;
-
 
     for (int i = 1; i < argc; i++)
     {
@@ -126,90 +122,62 @@ int connectMeter(int argc, char *argv[])
             strncpy(model, argv[i] + 8, sizeof(model) - 1);
             model[sizeof(model) - 1] = '\0'; // Null-terminate
             arg_found_model = true;
-            if (is_dev)
-            {
-                printf("model:%s\n", model);
-            };
         }
         else if (strncmp(argv[i], "--batch=", 8) == 0)
         {
             batch_year = parse_named_arg(argv[i], "--batch=");
             arg_found_batch = true;
-            if (is_dev)
-            {
-                printf("batch year:%d\n", batch_year);
-            };
         }
         else if (strncmp(argv[i], "--mac=", 6) == 0)
         {
             dest_mac = parse_named_arg(argv[i], "--mac=");
-            arg_found_mac = true;
-            if (is_dev)
-            {
-                printf("mac:%d\n", dest_mac);
-            };
+            arg_found_meter_address = true;
         }
         else if (strncmp(argv[i], "--comm_item=", 12) == 0)
         {
             comm_item = parse_named_arg(argv[i], "--comm_item=");
             arg_found_comm_item = true;
-            if (is_dev)
-            {
-                printf("comm_item:%d\n", comm_item);
-            };
         }
         else if (strncmp(argv[i], "--usb_offset=", 13) == 0)
         {
             // use_offset is optional
             usb_offset = parse_named_arg(argv[i], "--usb_offset=");
-            arg_found_usb_offset = true;
-            if (is_dev)
-            {
-                printf("usb_offset:%d\n", usb_offset);
-            };
         }
         else if (strncmp(argv[i], "--security=", 11) == 0)
         {
-            security_str = argv[i] + 11; // points to what comes after "--security="
-            useHls=1;
-            if (is_dev)
-            {
-                printf("Security level::%d\n", security_str);
-            };
+            security_str = argv[i] + 11;
+            if(strcmp(security_str, "high")==0){
+                useHls=1;
+            }
+            else if(strcmp(security_str, "low")==0){
+                useHls=0;
+            }else{
+                printf("invalid security level, valid options : 1.low 2.high \n");
+                return 1;
+            }
         }
     }
-    if (!arg_found_model)
-    {
-        printf("❌ model not found in args\n");
-        printf(invalid_arg_prompt, argv[0]);
-        return 1;
+
+    if(is_dev){
+        printf("Security Level:%s\n", security_str);
+        printf("Meter ID:%d\n", dest_mac);
+        printf("Comm Item:%d\n", comm_item);
+        printf("Usb Offset:%d\n", usb_offset);
+        printf("Model:%s\n", model);
+        printf("Batch Year:%d\n", batch_year);
     }
-    if (!arg_found_batch)
+
+    if (!arg_found_meter_address)
     {
-        printf("❌ batch not found in args\n");
-        printf(invalid_arg_prompt, argv[0]);
-        return 1;
-    }
-    if (!arg_found_mac)
-    {
-        printf("❌ mac not found in args\n");
+        printf("❌ Meter ID not found in args\n");
         printf(invalid_arg_prompt, argv[0]);
         return 1;
     }
     if (!arg_found_comm_item)
     {
-        printf("❌ comm_item not found in args\n");
+        printf("❌ Comm item not found in args\n");
         printf(invalid_arg_prompt, argv[0]);
         return 1;
-    }
-
-    for (int i = 0; i < sizeof(supported_batches) / sizeof(supported_batches[0]); i++)
-    {
-        if (batch_year == supported_batches[i])
-        {
-            is_supported_batch = true;
-            break;
-        }
     }
 
     const int com_port_number_default = 16;
@@ -222,7 +190,7 @@ int connectMeter(int argc, char *argv[])
     // serialPort="/dev/ttyUSB0";
     // usb com port adjustment
     if(is_dev){
-      printf("use com port number:%d\n", com_port_number);
+      printf("Com port number:%d\n", com_port_number);
     };
 
     con.settings.authentication = DLMS_AUTHENTICATION_NONE;
@@ -237,8 +205,6 @@ int connectMeter(int argc, char *argv[])
         con.trace = GX_TRACE_LEVEL_VERBOSE;
     }
    
-
-
     bb_init(&con.settings.password);
     bb_addString(&con.settings.password, "00000000");
     bb_clear(&con.settings.cipher.authenticationKey);
@@ -249,11 +215,6 @@ int connectMeter(int argc, char *argv[])
     con.settings.autoIncreaseInvokeID = 1;
     bb_clear(&con.settings.cipher.systemTitle);
     bb_addHexString(&con.settings.cipher.systemTitle, "5753453030303031");
-
-    con.settings.negotiatedConformance = DLMS_CONFORMANCE_RESERVED_ZERO;
-    con.settings.clientProposedConformance = (DLMS_CONFORMANCE_RESERVED_ZERO | DLMS_CONFORMANCE_GENERAL_PROTECTION | DLMS_CONFORMANCE_GENERAL_BLOCK_TRANSFER | DLMS_CONFORMANCE_READ | DLMS_CONFORMANCE_WRITE | DLMS_CONFORMANCE_UN_CONFIRMED_WRITE | DLMS_CONFORMANCE_DELTA_VALUE_ENCODING);
-    con.settings.proposedConformance = (DLMS_CONFORMANCE_GENERAL_PROTECTION | DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_GET_OR_READ | DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_SET_OR_WRITE | DLMS_CONFORMANCE_BLOCK_TRANSFER_WITH_ACTION | DLMS_CONFORMANCE_MULTIPLE_REFERENCES | DLMS_CONFORMANCE_GET | DLMS_CONFORMANCE_SET | DLMS_CONFORMANCE_SELECTIVE_ACCESS | DLMS_CONFORMANCE_ACTION);
-
 
     t_poll_result *poll_result;
     poll_result = (t_poll_result *)malloc(sizeof(t_poll_result));
@@ -323,9 +284,6 @@ int connectMeter(int argc, char *argv[])
             printf("error:rx_timeout\n");
             return 1;
         }
-        // if (comm_item == POLL_ITEM_TOTAL_ACTIVE_ENERGY){
-        //     save_meter_reading(poll_result->meter_identity, poll_result->t, poll_result->kwh);
-        // }
     }
     else
     {
@@ -352,7 +310,6 @@ int readSerialPort(
     char obisCopy[64]; 
     strncpy(obisCopy, readObjects, sizeof(obisCopy) - 1);
     obisCopy[sizeof(obisCopy) - 1] = '\0'; 
-    //-------------
     if (ret == 0 && readObjects != NULL)
     {
         if ((ret = com_updateInvocationCounter(connection, invocationCounter)) == 0 
@@ -390,14 +347,7 @@ int readSerialPort(
                     printf("Object '%s' not found from the association view.\n", p);
                     break;
                 }
-                // Capture objects are read first if the buffer of the profile generic is read.
-                // if (obj->objectType == DLMS_OBJECT_TYPE_PROFILE_GENERIC && index == 2)
-                // {
-                //     if ((ret = com_readValue(connection, obj, 3)) != 0)
-                //     {
-                //         break;
-                //     }
-                // }
+                
                 if(comm_item==GET_METER_SN || comm_item==GET_RELAY_STATUS || comm_item==POLL_ITEM_TOTAL_ACTIVE_ENERGY){
                     ret = com_readValue_new(connection, obj, index, comm_item,poll_result);
                 }else if(comm_item==SET_RELAY_OFF){
